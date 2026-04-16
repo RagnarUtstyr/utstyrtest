@@ -7,15 +7,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 /*
-  Set this to the public base path of your site.
+  Your GitHub Pages site is being served from:
+  https://ragnarutstyr.github.io/utstyrtest/
 
-  Use "/" if pages are served like:
-  https://ragnarutstyr.github.io/index.html
-
-  Use "/utstyrtest/" if pages are served like:
-  https://ragnarutstyr.github.io/utstyrtest/index.html
+  So all internal links should start from /utstyrtest/
 */
-const SITE_BASE_PATH = "/";
+const SITE_BASE_PATH = "/utstyrtest/";
 
 function withBase(path) {
   const cleanBase = SITE_BASE_PATH.endsWith("/") ? SITE_BASE_PATH : `${SITE_BASE_PATH}/`;
