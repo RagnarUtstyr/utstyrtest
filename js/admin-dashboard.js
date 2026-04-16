@@ -105,14 +105,14 @@ async function removeCategory(id) {
 async function loadCategories() {
   if (!categoryList) return;
 
-  categoryList.innerHTML = "<p>Loading categories…</p>";
+  categoryList.innerHTML = "<p class='admin-muted'>Loading categories…</p>";
 
   try {
     const categoriesQuery = query(collection(db, "categories"), orderBy("sortOrder"));
     const snapshot = await getDocs(categoriesQuery);
 
     if (snapshot.empty) {
-      categoryList.innerHTML = "<p>No categories yet.</p>";
+      categoryList.innerHTML = "<p class='admin-muted'>No categories yet.</p>";
       return;
     }
 
@@ -121,16 +121,17 @@ async function loadCategories() {
     snapshot.forEach((docSnap) => {
       const category = docSnap.data();
       const row = document.createElement("div");
-      row.className = "nav-card";
+      row.className = "admin-simple-item";
 
       row.innerHTML = `
-        <h2>${category.name || "Untitled category"}</h2>
-        <p>Slug: ${category.slug || ""}</p>
-        <p>Sort order: ${category.sortOrder ?? 0}</p>
-        <p>${category.active ? "Active" : "Inactive"}</p>
-        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-          <button class="rtn-add-to-basket edit-category-button">Edit</button>
-          <button class="rtn-empty-button delete-category-button">Delete</button>
+        <div>
+          <h3>${category.name || "Untitled category"}</h3>
+          <p>Slug: ${category.slug || ""}</p>
+          <p>Sort order: ${category.sortOrder ?? 0} · ${category.active ? "Active" : "Inactive"}</p>
+        </div>
+        <div class="admin-list-actions">
+          <button class="admin-button-secondary edit-category-button" type="button">Edit</button>
+          <button class="admin-button-danger delete-category-button" type="button">Delete</button>
         </div>
       `;
 
@@ -146,7 +147,7 @@ async function loadCategories() {
     });
   } catch (error) {
     console.error("Load categories failed:", error);
-    categoryList.innerHTML = "<p>Could not load categories.</p>";
+    categoryList.innerHTML = "<p class='admin-muted'>Could not load categories.</p>";
   }
 }
 
@@ -299,14 +300,14 @@ function formatPrice(item) {
 async function loadEquipmentList() {
   if (!equipmentList) return;
 
-  equipmentList.innerHTML = "<p>Loading equipment…</p>";
+  equipmentList.innerHTML = "<p class='admin-muted'>Loading equipment…</p>";
 
   try {
     const equipmentQuery = query(collection(db, "equipment"), orderBy("name"));
     const snapshot = await getDocs(equipmentQuery);
 
     if (snapshot.empty) {
-      equipmentList.innerHTML = "<p>No equipment yet.</p>";
+      equipmentList.innerHTML = "<p class='admin-muted'>No equipment yet.</p>";
       return;
     }
 
@@ -315,19 +316,19 @@ async function loadEquipmentList() {
     snapshot.forEach((docSnap) => {
       const item = docSnap.data();
       const row = document.createElement("div");
-      row.className = "nav-card";
-      row.style.marginBottom = "20px";
+      row.className = "admin-list-item";
 
       row.innerHTML = `
         <img src="${item.imageUrl || "../images/placeholder.png"}" alt="${item.alt || item.name || ""}" />
-        <h2>${item.shortTitle || item.name || "Untitled item"}</h2>
-        <p>Category: ${item.categorySlug || ""}</p>
-        <p>Inventory: ${Number(item.inventory || 0)}</p>
-        <p>${formatPrice(item)}</p>
-        <p>${item.active ? "Active" : "Inactive"}</p>
-        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-          <button class="rtn-add-to-basket edit-equipment-button">Edit</button>
-          <button class="rtn-empty-button delete-equipment-button">Delete</button>
+        <div class="admin-list-meta">
+          <h3>${item.shortTitle || item.name || "Untitled item"}</h3>
+          <p>Category: ${item.categorySlug || ""}</p>
+          <p>Inventory: ${Number(item.inventory || 0)} · Max qty: ${Number(item.maxQuantity || 1)}</p>
+          <p>${formatPrice(item)} · ${item.active ? "Active" : "Inactive"}</p>
+        </div>
+        <div class="admin-list-actions">
+          <button class="admin-button-secondary edit-equipment-button" type="button">Edit</button>
+          <button class="admin-button-danger delete-equipment-button" type="button">Delete</button>
         </div>
       `;
 
@@ -343,7 +344,7 @@ async function loadEquipmentList() {
     });
   } catch (error) {
     console.error("Load equipment failed:", error);
-    equipmentList.innerHTML = "<p>Could not load equipment list.</p>";
+    equipmentList.innerHTML = "<p class='admin-muted'>Could not load equipment list.</p>";
   }
 }
 
