@@ -2,7 +2,6 @@ import { db } from "./firebase-config.js";
 import {
   collection,
   getDocs,
-  orderBy,
   query,
   where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
@@ -125,17 +124,18 @@ async function loadCategoryItems() {
     const equipmentRef = collection(db, "equipment");
     const equipmentQuery = query(
       equipmentRef,
-      where("active", "==", true),
-      where("categorySlug", "==", currentCategorySlug),
-      orderBy("name")
+      where("categorySlug", "==", currentCategorySlug)
     );
 
     const snapshot = await getDocs(equipmentQuery);
 
-    allEquipment = snapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      data: docSnap.data()
-    }));
+    allEquipment = snapshot.docs
+      .map((docSnap) => ({
+        id: docSnap.id,
+        data: docSnap.data()
+      }))
+      .filter(({ data }) => data.active !== false)
+      .sort((a, b) => (a.data.name || "").localeCompare(b.data.name || ""));
 
     renderEquipment(allEquipment);
 
