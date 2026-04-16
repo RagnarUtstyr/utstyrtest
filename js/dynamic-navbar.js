@@ -3,8 +3,7 @@ import {
   collection,
   getDocs,
   orderBy,
-  query,
-  where
+  query
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 function getPrefix() {
@@ -18,13 +17,11 @@ async function loadNavbar() {
   if (!navContainer) return;
 
   const prefix = getPrefix();
-
   let categoryLinks = "";
 
   try {
     const categoriesQuery = query(
       collection(db, "categories"),
-      where("active", "==", true),
       orderBy("sortOrder")
     );
 
@@ -32,6 +29,8 @@ async function loadNavbar() {
 
     snapshot.forEach((docSnap) => {
       const category = docSnap.data();
+
+      if (category.active === false) return;
       if (!category.slug || !category.name) return;
 
       categoryLinks += `
