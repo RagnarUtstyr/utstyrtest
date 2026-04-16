@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>All Equipment</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="images/favicon-64x64.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <a href="index.html">
+        <img src="images/logo.png" alt="Ragnar Bøe Utstyrsleie Logo" />
+      </a>
+    </div>
+
+    <div class="basket-icon-container">
+      <a href="basket.html">
+        <img src="images/basket-icon.png" alt="Basket" class="basket-icon" />
+        <span id="basket-icon-count">0</span>
+      </a>
+    </div>
+
+    <nav id="main-navbar"></nav>
+  </header>
+
+  <main>
+    <h1>All Equipment</h1>
+
+    <input type="text" id="search-field" placeholder="Search for equipment..." />
+
+    <div class="content-grid" id="equipment-grid"></div>
+  </main>
+
+  <footer>
+    <p>© 2024 Bergen Utstyrsleie</p>
+  </footer>
+
+  <script src="navbar.js"></script>
+  <script src="basket.js"></script>
+  <script type="module" src="js/equipment-list.js"></script>
+</body>
+</html>

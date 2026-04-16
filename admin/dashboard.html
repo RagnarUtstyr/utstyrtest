@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <link rel="stylesheet" href="../contact.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <a href="../index.html">
+        <img src="../images/logo.png" alt="Logo" />
+      </a>
+    </div>
+
+    <nav id="main-navbar"></nav>
+  </header>
+
+  <main>
+    <h1>Admin Dashboard</h1>
+
+    <div style="max-width: 800px; margin: 0 auto 20px auto; text-align:center;">
+      <button id="admin-logout-button" class="rtn-submit-button">Log Out</button>
+      <p id="auth-status"></p>
+      <p id="save-status"></p>
+    </div>
+
+    <form id="equipment-form">
+      <h2 id="form-title">Add equipment</h2>
+
+      <label for="name">Name</label>
+      <input type="text" id="name" required />
+
+      <label for="shortTitle">Card title</label>
+      <input type="text" id="shortTitle" required />
+
+      <label for="detailTitle">Detail page title</label>
+      <input type="text" id="detailTitle" required />
+
+      <label for="category">Category</label>
+      <input type="text" id="category" />
+
+      <label for="inventory">Inventory</label>
+      <input type="number" id="inventory" min="0" value="1" />
+
+      <label for="maxQuantity">Max quantity per basket</label>
+      <input type="number" id="maxQuantity" min="1" value="1" />
+
+      <label for="rentalPrice">Rental price (NOK)</label>
+      <input type="number" id="rentalPrice" min="0" step="1" />
+
+      <label for="priceUnit">Price unit</label>
+      <input type="text" id="priceUnit" placeholder="day, weekend, week" />
+
+      <label for="alt">Image alt text</label>
+      <input type="text" id="alt" />
+
+      <label for="keywords">Keywords (one per line)</label>
+      <textarea id="keywords" rows="6"></textarea>
+
+      <label for="description">Description paragraphs (one per line)</label>
+      <textarea id="description" rows="8"></textarea>
+
+      <label for="specifications">Specifications (one per line, format: Label: Value)</label>
+      <textarea id="specifications" rows="8"></textarea>
+
+      <label for="existingImageUrl">Existing image URL (optional)</label>
+      <input type="text" id="existingImageUrl" />
+
+      <label for="imageFile">Upload image</label>
+      <input type="file" id="imageFile" accept="image/*" />
+
+      <label style="display:flex; align-items:center; gap:10px; margin-top:20px;">
+        <input type="checkbox" id="active" checked />
+        Active
+      </label>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button type="submit" class="contact-submit-button">Save equipment</button>
+        <button type="button" id="cancel-edit-button" class="rtn-empty-button">Cancel edit</button>
+      </div>
+    </form>
+
+    <section style="max-width:1200px; margin:40px auto;">
+      <h2>Existing equipment</h2>
+      <div class="content-grid" id="admin-equipment-list"></div>
+    </section>
+  </main>
+
+  <script src="../navbar.js"></script>
+  <script type="module" src="../js/admin-auth.js"></script>
+  <script type="module" src="../js/admin-dashboard.js"></script>
+</body>
+</html>
