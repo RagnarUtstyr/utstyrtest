@@ -1,28 +1,26 @@
 import { auth } from "./firebase-config.js";
 import {
-  signInWithEmailAndPassword,
+  GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithPopup,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
-const loginForm = document.getElementById("admin-login-form");
+const googleLoginButton = document.getElementById("google-login-button");
 const logoutButton = document.getElementById("admin-logout-button");
 const authStatus = document.getElementById("auth-status");
 
-if (loginForm) {
-  loginForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
+const provider = new GoogleAuthProvider();
 
-    const email = document.getElementById("admin-email").value.trim();
-    const password = document.getElementById("admin-password").value;
-
+if (googleLoginButton) {
+  googleLoginButton.addEventListener("click", async () => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithPopup(auth, provider);
       window.location.href = "dashboard.html";
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("Google login failed:", error);
       if (authStatus) {
-        authStatus.textContent = "Login failed. Check email and password.";
+        authStatus.textContent = "Google login failed.";
       }
     }
   });
