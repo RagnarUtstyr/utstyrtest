@@ -3,8 +3,7 @@ import {
   collection,
   getDocs,
   orderBy,
-  query,
-  where
+  query
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 function buildCategoryCard(category) {
@@ -28,7 +27,6 @@ async function loadCategories() {
     const categoriesRef = collection(db, "categories");
     const categoriesQuery = query(
       categoriesRef,
-      where("active", "==", true),
       orderBy("sortOrder")
     );
 
@@ -36,13 +34,16 @@ async function loadCategories() {
 
     grid.innerHTML = "";
 
-    if (snapshot.empty) {
+    const activeCategories = snapshot.docs
+      .map((docSnap) => docSnap.data())
+      .filter((category) => category.active !== false);
+
+    if (!activeCategories.length) {
       grid.innerHTML = "<p>No categories found.</p>";
       return;
     }
 
-    snapshot.forEach((docSnap) => {
-      const category = docSnap.data();
+    activeCategories.forEach((category) => {
       if (!category.slug || !category.name) return;
       grid.appendChild(buildCategoryCard(category));
     });
