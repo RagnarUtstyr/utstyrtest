@@ -1,102 +1,43 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Equipment</title>
-    <link rel="icon" type="image/png" sizes="64x64" href="images/favicon-64x64.png">
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Equipment</title>
+  <link rel="icon" href="images/favicon-64x64.png" type="image/png" />
+  <link rel="shortcut icon" href="images/favicon-64x64.png" type="image/png" />
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap" rel="stylesheet" />
 </head>
 <body>
-<header>
-    <!-- Logo on the left -->
+  <header>
     <div class="logo">
-        <a href="index.html">
-            <img src="images/logo.png" alt="Ragnar Bøe Utstyrsleie Logo">
-        </a>
+      <a href="index.html">
+        <img src="images/logo.png" alt="Ragnar Bøe Utstyrsleie Logo" />
+      </a>
     </div>
-    
-	<div id="search-bar-container">
-        <input type="text" id="global-search-field" placeholder="Search" autocomplete="off">
-        <div id="dropdown-results" class="dropdown-results"></div>
-        </div>
-    
+
     <div class="basket-icon-container">
-        <a href="basket.html">
-            <img src="images/basket-icon.png" alt="Basket" class="basket-icon"/>
-            <span id="basket-icon-count">0</span> <!-- Item count -->
-        </a>
+      <a href="basket.html">
+        <img src="images/basket-icon.png" alt="Basket" class="basket-icon" />
+        <span id="basket-icon-count">0</span>
+      </a>
     </div>
-    
+
     <nav id="main-navbar"></nav>
-    </header>
+  </header>
 
+  <main>
+    <h1>Equipment Categories</h1>
+    <div class="eq-content-grid" id="category-grid"></div>
+  </main>
 
+  <footer>
+    <p>© 2024 Bergen Utstyrsleie</p>
+  </footer>
 
-    <main>
-
-    <!-- Navigation Menu Container using Grid -->
-    <div class="eq-content-grid">
-        <!-- Navigation links in separate boxes -->
-<div class="eq-nav-card" onclick="window.location.href='camera.html'">
-    <span>Camera</span>
-</div>
-<div class="eq-nav-card" onclick="window.location.href='camacc.html'">
-    <span>Camera Accessories</span>
-</div>
-<div class="eq-nav-card" onclick="window.location.href='optikk.html'">
-    <span>Optikk</span>
-</div>
-<div class="eq-nav-card" onclick="window.location.href='monitor.html'">
-    <span>Monitor</span>
-</div>
-<div class="eq-nav-card" onclick="window.location.href='fokus.html'">
-    <span>Focus</span>
-</div>
-<div class="eq-nav-card" onclick="window.location.href='wireless.html'">
-    <span>Wireless</span>
-</div>
-<div class="eq-nav-card" onclick="window.location.href='batteri.html'">
-    <span>Battery</span>
-</div>
-<div class="eq-nav-card" onclick="window.location.href='lys.html'">
-    <span>Lights</span>
-</div>
-<div class="eq-nav-card" onclick="window.location.href='grip.html'">
-    <span>Grip</span>
-</div>
-<div class="eq-nav-card" onclick="window.location.href='lyd.html'">
-    <span>Sound</span>
-</div>
-<div class="eq-nav-card" onclick="window.location.href='filter.html'">
-    <span>Filter</span>
-</div>
-<div class="eq-nav-card" onclick="window.location.href='tralle.html'">
-    <span>Carts</span>
-</div>
-<div class="eq-nav-card" onclick="window.location.href='power.html'">
-    <span>Power and EL</span>
-</div>
-<div class="eq-nav-card" onclick="window.location.href='cables.html'">
-    <span>Cables</span>
-</div>
-<div class="eq-nav-card" onclick="window.location.href='data-stream.html'">
-    <span>Data/Stream</span>
-</div>
-<div class="eq-nav-card" onclick="window.location.href='alleq.html'">
-    <span>All Equipment</span>
-</div>
-    </div>
-
-<footer>
-        <p>© 2024 Bergen Utstyrsleie</p>
-    </footer>
-
-    <script src="main.js"></script>
-	<script src="basket.js"></script>
-    <script src="search.js"></script>
-    <script src="navbar.js"></script>
+  <script src="basket.js"></script>
+  <script type="module" src="js/dynamic-navbar.js"></script>
+  <script type="module" src="js/index-categories.js"></script>
 </body>
 </html>
