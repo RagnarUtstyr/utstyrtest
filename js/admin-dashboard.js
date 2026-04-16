@@ -15,7 +15,7 @@ import {
   where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-const IMAGE_BASE_PATH = "/images/equipment/";
+const IMAGE_BASE_PATH = "/images/";
 
 const saveStatus = document.getElementById("save-status");
 const equipmentForm = document.getElementById("equipment-form");
