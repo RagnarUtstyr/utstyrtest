@@ -61,7 +61,7 @@ function parseSpecifications(text) {
 
 function buildImageUrl(imageName) {
   const cleanName = (imageName || "").trim().replace(/^\/+/, "");
-  return cleanName ? `${IMAGE_BASE_PATH}${cleanName}` : "";
+  return cleanName ? `${IMAGE_BASE_PATH}${cleanName}` : "/images/placeholder.png";
 }
 
 function formatPrice(item) {
@@ -291,11 +291,13 @@ async function loadEquipmentList() {
 
     snapshot.forEach((docSnap) => {
       const item = docSnap.data();
+      const imageUrl = buildImageUrl(item.imageName);
+
       const row = document.createElement("div");
       row.className = "admin-list-item";
 
       row.innerHTML = `
-        <img src="${item.imageUrl || "/images/placeholder.png"}" alt="${item.name || ""}" />
+        <img src="${imageUrl}" alt="${item.name || ""}" />
         <div class="admin-list-meta">
           <h3>${item.name || "Untitled item"}</h3>
           <p>Category: ${item.categorySlug || ""}</p>
