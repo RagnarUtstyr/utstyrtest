@@ -32,7 +32,7 @@ function buildCard(docId, item) {
   card.dataset.keywords = (item.keywords || []).join(" ").toLowerCase();
 
   const imageUrl = item.imageUrl || "images/placeholder.png";
-  const title = item.shortTitle || item.name || "Untitled item";
+  const title = item.name || "Untitled item";
   const name = item.name || title;
   const maxQuantity = Number(item.maxQuantity || item.inventory || 1);
   const priceText = formatPrice(item);
@@ -85,8 +85,7 @@ function filterEquipment(searchTerm) {
   const filtered = allEquipment.filter(({ data }) => {
     const haystack = [
       data.name,
-      data.shortTitle,
-      data.category,
+      data.categorySlug,
       ...(data.keywords || [])
     ]
       .join(" ")

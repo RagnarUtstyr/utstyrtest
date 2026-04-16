@@ -183,7 +183,6 @@ async function saveEquipment(event) {
     const categorySlug = await ensureCategoryExists();
 
     const name = document.getElementById("name").value.trim();
-    const shortTitle = document.getElementById("shortTitle").value.trim();
     const detailTitle = document.getElementById("detailTitle").value.trim();
     const inventory = Number(document.getElementById("inventory").value || 0);
     const maxQuantity = Number(document.getElementById("maxQuantity").value || 1);
@@ -197,11 +196,10 @@ async function saveEquipment(event) {
     const description = parseLines(document.getElementById("description").value);
     const specifications = parseSpecifications(document.getElementById("specifications").value);
 
-    const slug = slugify(shortTitle || name);
+    const slug = slugify(name);
 
     const payload = {
       name,
-      shortTitle,
       detailTitle,
       slug,
       categorySlug,
@@ -241,7 +239,6 @@ function fillEquipmentForm(id, item) {
   document.getElementById("form-title").textContent = "Edit equipment";
 
   document.getElementById("name").value = item.name || "";
-  document.getElementById("shortTitle").value = item.shortTitle || "";
   document.getElementById("detailTitle").value = item.detailTitle || "";
   document.getElementById("inventory").value = item.inventory ?? 0;
   document.getElementById("maxQuantity").value = item.maxQuantity ?? 1;
@@ -305,7 +302,7 @@ async function loadEquipmentList() {
       row.innerHTML = `
         <img src="${item.imageUrl || "../images/placeholder.png"}" alt="${item.alt || item.name || ""}" />
         <div class="admin-list-meta">
-          <h3>${item.shortTitle || item.name || "Untitled item"}</h3>
+          <h3>${item.name || "Untitled item"}</h3>
           <p>Category: ${item.categorySlug || ""}</p>
           <p>Inventory: ${Number(item.inventory || 0)} · Max qty: ${Number(item.maxQuantity || 1)}</p>
           <p>${formatPrice(item)} · ${item.active ? "Active" : "Inactive"}</p>
