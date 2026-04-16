@@ -2,9 +2,7 @@ import { db } from "./firebase-config.js";
 import {
   collection,
   getDocs,
-  orderBy,
-  query,
-  where
+  query
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 let allEquipment = [];
@@ -30,7 +28,7 @@ function buildCard(docId, item) {
   card.className = "nav-card";
   card.dataset.keywords = (item.keywords || []).join(" ").toLowerCase();
 
-  const imageUrl = item.imageUrl || "/images/placeholder.png";
+  const imageUrl = item.imageUrl || "/utstyrtest/images/placeholder.png";
   const title = item.name || "Untitled item";
   const priceText = formatPrice(item);
 
@@ -92,18 +90,17 @@ async function loadEquipment() {
 
   try {
     const equipmentRef = collection(db, "equipment");
-    const equipmentQuery = query(
-      equipmentRef,
-      where("active", "==", true),
-      orderBy("name")
-    );
+    const equipmentQuery = query(equipmentRef);
 
     const snapshot = await getDocs(equipmentQuery);
 
-    allEquipment = snapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      data: docSnap.data()
-    }));
+    allEquipment = snapshot.docs
+      .map((docSnap) => ({
+        id: docSnap.id,
+        data: docSnap.data()
+      }))
+      .filter(({ data }) => data.active !== false)
+      .sort((a, b) => (a.data.name || "").localeCompare(b.data.name || ""));
 
     renderEquipment(allEquipment);
 
