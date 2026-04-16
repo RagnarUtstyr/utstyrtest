@@ -15,6 +15,8 @@ import {
   where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+const IMAGE_BASE_PATH = "/images/equipment/";
+
 const saveStatus = document.getElementById("save-status");
 const equipmentForm = document.getElementById("equipment-form");
 const equipmentList = document.getElementById("admin-equipment-list");
@@ -57,6 +59,11 @@ function parseSpecifications(text) {
     });
 }
 
+function buildImageUrl(imageName) {
+  const cleanName = (imageName || "").trim().replace(/^\/+/, "");
+  return cleanName ? `${IMAGE_BASE_PATH}${cleanName}` : "";
+}
+
 function formatPrice(item) {
   if (
     item.rentalPrice === undefined ||
@@ -66,7 +73,7 @@ function formatPrice(item) {
     return "No price";
   }
 
-  return `${item.rentalPrice} NOK${item.priceUnit ? ` / ${item.priceUnit}` : ""}`;
+  return `${item.rentalPrice} NOK`;
 }
 
 function toggleNewCategoryFields() {
@@ -166,7 +173,6 @@ function resetEquipmentForm() {
   equipmentForm.reset();
   document.getElementById("form-title").textContent = "Add equipment";
   document.getElementById("inventory").value = 1;
-  document.getElementById("maxQuantity").value = 1;
   document.getElementById("active").checked = true;
   categorySelect.value = "";
   newCategoryNameInput.value = "";
@@ -183,14 +189,10 @@ async function saveEquipment(event) {
     const categorySlug = await ensureCategoryExists();
 
     const name = document.getElementById("name").value.trim();
-    const detailTitle = document.getElementById("detailTitle").value.trim();
+    const imageName = document.getElementById("imageName").value.trim();
     const inventory = Number(document.getElementById("inventory").value || 0);
-    const maxQuantity = Number(document.getElementById("maxQuantity").value || 1);
     const rentalPriceValue = document.getElementById("rentalPrice").value;
     const rentalPrice = rentalPriceValue === "" ? null : Number(rentalPriceValue);
-    const priceUnit = document.getElementById("priceUnit").value.trim();
-    const alt = document.getElementById("alt").value.trim();
-    const imageUrl = document.getElementById("imageUrl").value.trim();
     const active = document.getElementById("active").checked;
     const keywords = parseLines(document.getElementById("keywords").value);
     const description = parseLines(document.getElementById("description").value);
@@ -200,15 +202,12 @@ async function saveEquipment(event) {
 
     const payload = {
       name,
-      detailTitle,
       slug,
       categorySlug,
+      imageName,
+      imageUrl: buildImageUrl(imageName),
       inventory,
-      maxQuantity,
       rentalPrice,
-      priceUnit,
-      alt,
-      imageUrl,
       active,
       keywords,
       description,
@@ -239,19 +238,15 @@ function fillEquipmentForm(id, item) {
   document.getElementById("form-title").textContent = "Edit equipment";
 
   document.getElementById("name").value = item.name || "";
-  document.getElementById("detailTitle").value = item.detailTitle || "";
+  document.getElementById("imageName").value = item.imageName || "";
   document.getElementById("inventory").value = item.inventory ?? 0;
-  document.getElementById("maxQuantity").value = item.maxQuantity ?? 1;
   document.getElementById("rentalPrice").value = item.rentalPrice ?? "";
-  document.getElementById("priceUnit").value = item.priceUnit || "";
-  document.getElementById("alt").value = item.alt || "";
-  document.getElementById("imageUrl").value = item.imageUrl || "";
-  document.getElementById("active").checked = !!item.active;
   document.getElementById("keywords").value = (item.keywords || []).join("\n");
   document.getElementById("description").value = (item.description || []).join("\n");
   document.getElementById("specifications").value = (item.specifications || [])
     .map((spec) => `${spec.label}: ${spec.value}`)
     .join("\n");
+  document.getElementById("active").checked = !!item.active;
 
   if (item.categorySlug) {
     categorySelect.value = item.categorySlug;
@@ -300,12 +295,13 @@ async function loadEquipmentList() {
       row.className = "admin-list-item";
 
       row.innerHTML = `
-        <img src="${item.imageUrl || "../images/placeholder.png"}" alt="${item.alt || item.name || ""}" />
+        <img src="${item.imageUrl || "/images/placeholder.png"}" alt="${item.name || ""}" />
         <div class="admin-list-meta">
           <h3>${item.name || "Untitled item"}</h3>
           <p>Category: ${item.categorySlug || ""}</p>
-          <p>Inventory: ${Number(item.inventory || 0)} · Max qty: ${Number(item.maxQuantity || 1)}</p>
+          <p>Inventory: ${Number(item.inventory || 0)}</p>
           <p>${formatPrice(item)} · ${item.active ? "Active" : "Inactive"}</p>
+          <p>Image: ${item.imageName || ""}</p>
         </div>
         <div class="admin-list-actions">
           <button class="admin-button-secondary edit-equipment-button" type="button">Edit</button>

@@ -28,8 +28,7 @@ function formatPrice(item) {
     return "";
   }
 
-  const unit = item.priceUnit ? ` / ${item.priceUnit}` : "";
-  return `${item.rentalPrice} NOK${unit}`;
+  return `${item.rentalPrice} NOK`;
 }
 
 function buildCard(docId, item) {
@@ -37,27 +36,17 @@ function buildCard(docId, item) {
   card.className = "nav-card";
   card.dataset.keywords = (item.keywords || []).join(" ").toLowerCase();
 
-  const imageUrl = item.imageUrl || "images/placeholder.png";
+  const imageUrl = item.imageUrl || "/images/placeholder.png";
   const title = item.name || "Untitled item";
-  const basketName = item.name || title;
-  const maxQuantity = Number(item.maxQuantity || item.inventory || 1);
   const priceText = formatPrice(item);
 
   card.innerHTML = `
     <a href="equipment-item.html?id=${encodeURIComponent(docId)}">
-      <img src="${imageUrl}" alt="${item.alt || title}" loading="lazy" />
+      <img src="${imageUrl}" alt="${title}" loading="lazy" />
       <h2>${title}</h2>
     </a>
     ${priceText ? `<p><strong>${priceText}</strong></p>` : ""}
-    <button class="rtn-add-to-basket">Add to Basket</button>
   `;
-
-  const button = card.querySelector(".rtn-add-to-basket");
-  button.addEventListener("click", () => {
-    if (typeof addToBasket === "function") {
-      addToBasket(basketName, maxQuantity);
-    }
-  });
 
   return card;
 }

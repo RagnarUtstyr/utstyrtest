@@ -18,8 +18,7 @@ function formatPrice(item) {
     return "<p>Price on request</p>";
   }
 
-  const unit = item.priceUnit ? ` / ${item.priceUnit}` : "";
-  return `<p><strong>${item.rentalPrice} NOK${unit}</strong></p>`;
+  return `<p><strong>${item.rentalPrice} NOK</strong></p>`;
 }
 
 function renderSpecifications(specifications = []) {
@@ -70,23 +69,17 @@ async function loadEquipmentItem() {
     }
 
     const item = itemSnap.data();
-    const imageUrl = item.imageUrl || "images/placeholder.png";
-    const title = item.detailTitle || item.name || "Untitled item";
-    const basketName = item.name || title;
-    const maxQuantity = Number(item.maxQuantity || item.inventory || 1);
+    const imageUrl = item.imageUrl || "/images/placeholder.png";
+    const title = item.name || "Untitled item";
 
     container.innerHTML = `
-      <div>
-        <button class="rtn-add-to-basket" id="detail-add-button">Add to Basket</button>
-      </div>
-
       <main>
         <h1>${title}</h1>
 
         <div class="equipment-detail">
           <br><br>
 
-          <img src="${imageUrl}" alt="${item.alt || title}" />
+          <img src="${imageUrl}" alt="${title}" />
 
           <h2>Inventory</h2>
           <p>${Number(item.inventory || 0)} Available</p>
@@ -107,15 +100,6 @@ async function loadEquipmentItem() {
         </div>
       </main>
     `;
-
-    const addButton = document.getElementById("detail-add-button");
-    if (addButton) {
-      addButton.addEventListener("click", () => {
-        if (typeof addToBasket === "function") {
-          addToBasket(basketName, maxQuantity);
-        }
-      });
-    }
   } catch (error) {
     console.error("Error loading equipment item:", error);
     container.innerHTML = "<p>Could not load equipment item.</p>";
