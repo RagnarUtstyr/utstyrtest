@@ -11,17 +11,21 @@ import {
   orderBy,
   query,
   serverTimestamp,
-  updateDoc
+  updateDoc,
+  where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const saveStatus = document.getElementById("save-status");
+const equipmentForm = document.getElementById("equipment-form");
+const equipmentList = document.getElementById("admin-equipment-list");
+const categorySelect = document.getElementById("categorySelect");
+const newCategoryNameField = document.getElementById("newCategoryNameField");
+const newCategorySlugField = document.getElementById("newCategorySlugField");
+const newCategoryNameInput = document.getElementById("newCategoryName");
+const newCategorySlugInput = document.getElementById("newCategorySlug");
 
-/* ---------------------------
-   CATEGORY FORM
----------------------------- */
-const categoryForm = document.getElementById("category-form");
-const categoryList = document.getElementById("admin-category-list");
-let currentCategoryEditId = null;
+let currentEquipmentEditId = null;
+let categoriesCache = [];
 
 function slugify(value) {
   return (value || "")
@@ -31,132 +35,6 @@ function slugify(value) {
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 }
-
-function resetCategoryForm() {
-  currentCategoryEditId = null;
-  categoryForm.reset();
-  document.getElementById("category-form-title").textContent = "Add category";
-  document.getElementById("categorySortOrder").value = 0;
-  document.getElementById("categoryActive").checked = true;
-}
-
-async function saveCategory(event) {
-  event.preventDefault();
-
-  const name = document.getElementById("categoryName").value.trim();
-  const slugInput = document.getElementById("categorySlug").value.trim();
-  const slug = slugify(slugInput || name);
-  const sortOrder = Number(document.getElementById("categorySortOrder").value || 0);
-  const active = document.getElementById("categoryActive").checked;
-
-  try {
-    saveStatus.textContent = "Saving category…";
-
-    const payload = {
-      name,
-      slug,
-      sortOrder,
-      active,
-      updatedAt: serverTimestamp()
-    };
-
-    if (currentCategoryEditId) {
-      await updateDoc(doc(db, "categories", currentCategoryEditId), payload);
-    } else {
-      await addDoc(collection(db, "categories"), {
-        ...payload,
-        createdAt: serverTimestamp()
-      });
-    }
-
-    saveStatus.textContent = "Category saved.";
-    resetCategoryForm();
-    await loadCategories();
-  } catch (error) {
-    console.error("Save category failed:", error);
-    saveStatus.textContent = "Category save failed.";
-  }
-}
-
-function fillCategoryForm(id, category) {
-  currentCategoryEditId = id;
-  document.getElementById("category-form-title").textContent = "Edit category";
-
-  document.getElementById("categoryName").value = category.name || "";
-  document.getElementById("categorySlug").value = category.slug || "";
-  document.getElementById("categorySortOrder").value = category.sortOrder ?? 0;
-  document.getElementById("categoryActive").checked = !!category.active;
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-async function removeCategory(id) {
-  const ok = window.confirm("Delete this category?");
-  if (!ok) return;
-
-  try {
-    await deleteDoc(doc(db, "categories", id));
-    await loadCategories();
-  } catch (error) {
-    console.error("Delete category failed:", error);
-  }
-}
-
-async function loadCategories() {
-  if (!categoryList) return;
-
-  categoryList.innerHTML = "<p class='admin-muted'>Loading categories…</p>";
-
-  try {
-    const categoriesQuery = query(collection(db, "categories"), orderBy("sortOrder"));
-    const snapshot = await getDocs(categoriesQuery);
-
-    if (snapshot.empty) {
-      categoryList.innerHTML = "<p class='admin-muted'>No categories yet.</p>";
-      return;
-    }
-
-    categoryList.innerHTML = "";
-
-    snapshot.forEach((docSnap) => {
-      const category = docSnap.data();
-      const row = document.createElement("div");
-      row.className = "admin-simple-item";
-
-      row.innerHTML = `
-        <div>
-          <h3>${category.name || "Untitled category"}</h3>
-          <p>Slug: ${category.slug || ""}</p>
-          <p>Sort order: ${category.sortOrder ?? 0} · ${category.active ? "Active" : "Inactive"}</p>
-        </div>
-        <div class="admin-list-actions">
-          <button class="admin-button-secondary edit-category-button" type="button">Edit</button>
-          <button class="admin-button-danger delete-category-button" type="button">Delete</button>
-        </div>
-      `;
-
-      row.querySelector(".edit-category-button").addEventListener("click", () => {
-        fillCategoryForm(docSnap.id, category);
-      });
-
-      row.querySelector(".delete-category-button").addEventListener("click", () => {
-        removeCategory(docSnap.id);
-      });
-
-      categoryList.appendChild(row);
-    });
-  } catch (error) {
-    console.error("Load categories failed:", error);
-    categoryList.innerHTML = "<p class='admin-muted'>Could not load categories.</p>";
-  }
-}
-
-/* ---------------------------
-   EQUIPMENT FORM
----------------------------- */
-const equipmentForm = document.getElementById("equipment-form");
-const equipmentList = document.getElementById("admin-equipment-list");
-let currentEquipmentEditId = null;
 
 function parseLines(text) {
   return text
@@ -179,6 +57,110 @@ function parseSpecifications(text) {
     });
 }
 
+function formatPrice(item) {
+  if (
+    item.rentalPrice === undefined ||
+    item.rentalPrice === null ||
+    item.rentalPrice === ""
+  ) {
+    return "No price";
+  }
+
+  return `${item.rentalPrice} NOK${item.priceUnit ? ` / ${item.priceUnit}` : ""}`;
+}
+
+function toggleNewCategoryFields() {
+  const isNew = categorySelect.value === "__new__";
+  newCategoryNameField.classList.toggle("hidden", !isNew);
+  newCategorySlugField.classList.toggle("hidden", !isNew);
+
+  newCategoryNameInput.required = isNew;
+  newCategorySlugInput.required = isNew;
+}
+
+async function loadCategoriesIntoSelect(selectedSlug = "") {
+  if (!categorySelect) return;
+
+  try {
+    const categoriesQuery = query(collection(db, "categories"), orderBy("sortOrder"));
+    const snapshot = await getDocs(categoriesQuery);
+
+    categoriesCache = snapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data()
+    }));
+
+    categorySelect.innerHTML = `
+      <option value="">Select category</option>
+      ${categoriesCache
+        .filter((category) => category.active !== false)
+        .map(
+          (category) =>
+            `<option value="${category.slug}">${category.name}</option>`
+        )
+        .join("")}
+      <option value="__new__">Create new category</option>
+    `;
+
+    if (selectedSlug) {
+      const exists = categoriesCache.some((category) => category.slug === selectedSlug);
+      if (exists) {
+        categorySelect.value = selectedSlug;
+      }
+    }
+
+    toggleNewCategoryFields();
+  } catch (error) {
+    console.error("Failed loading categories:", error);
+  }
+}
+
+async function ensureCategoryExists() {
+  const selectedValue = categorySelect.value;
+
+  if (!selectedValue) {
+    throw new Error("Please select a category.");
+  }
+
+  if (selectedValue !== "__new__") {
+    return selectedValue;
+  }
+
+  const newCategoryName = newCategoryNameInput.value.trim();
+  const newCategorySlug = slugify(newCategorySlugInput.value.trim());
+
+  if (!newCategoryName || !newCategorySlug) {
+    throw new Error("New category name and slug are required.");
+  }
+
+  const existingQuery = query(
+    collection(db, "categories"),
+    where("slug", "==", newCategorySlug)
+  );
+  const existingSnapshot = await getDocs(existingQuery);
+
+  if (!existingSnapshot.empty) {
+    return newCategorySlug;
+  }
+
+  const nextSortOrder =
+    categoriesCache.length > 0
+      ? Math.max(...categoriesCache.map((category) => Number(category.sortOrder || 0))) + 1
+      : 0;
+
+  await addDoc(collection(db, "categories"), {
+    name: newCategoryName,
+    slug: newCategorySlug,
+    sortOrder: nextSortOrder,
+    active: true,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+
+  await loadCategoriesIntoSelect(newCategorySlug);
+  return newCategorySlug;
+}
+
 function resetEquipmentForm() {
   currentEquipmentEditId = null;
   equipmentForm.reset();
@@ -186,31 +168,36 @@ function resetEquipmentForm() {
   document.getElementById("inventory").value = 1;
   document.getElementById("maxQuantity").value = 1;
   document.getElementById("active").checked = true;
+  categorySelect.value = "";
+  newCategoryNameInput.value = "";
+  newCategorySlugInput.value = "";
+  toggleNewCategoryFields();
 }
 
 async function saveEquipment(event) {
   event.preventDefault();
 
-  const name = document.getElementById("name").value.trim();
-  const shortTitle = document.getElementById("shortTitle").value.trim();
-  const detailTitle = document.getElementById("detailTitle").value.trim();
-  const categorySlug = slugify(document.getElementById("categorySlug").value.trim());
-  const inventory = Number(document.getElementById("inventory").value || 0);
-  const maxQuantity = Number(document.getElementById("maxQuantity").value || 1);
-  const rentalPriceValue = document.getElementById("rentalPrice").value;
-  const rentalPrice = rentalPriceValue === "" ? null : Number(rentalPriceValue);
-  const priceUnit = document.getElementById("priceUnit").value.trim();
-  const alt = document.getElementById("alt").value.trim();
-  const imageUrl = document.getElementById("imageUrl").value.trim();
-  const active = document.getElementById("active").checked;
-  const keywords = parseLines(document.getElementById("keywords").value);
-  const description = parseLines(document.getElementById("description").value);
-  const specifications = parseSpecifications(document.getElementById("specifications").value);
-
-  const slug = slugify(shortTitle || name);
-
   try {
     saveStatus.textContent = "Saving equipment…";
+
+    const categorySlug = await ensureCategoryExists();
+
+    const name = document.getElementById("name").value.trim();
+    const shortTitle = document.getElementById("shortTitle").value.trim();
+    const detailTitle = document.getElementById("detailTitle").value.trim();
+    const inventory = Number(document.getElementById("inventory").value || 0);
+    const maxQuantity = Number(document.getElementById("maxQuantity").value || 1);
+    const rentalPriceValue = document.getElementById("rentalPrice").value;
+    const rentalPrice = rentalPriceValue === "" ? null : Number(rentalPriceValue);
+    const priceUnit = document.getElementById("priceUnit").value.trim();
+    const alt = document.getElementById("alt").value.trim();
+    const imageUrl = document.getElementById("imageUrl").value.trim();
+    const active = document.getElementById("active").checked;
+    const keywords = parseLines(document.getElementById("keywords").value);
+    const description = parseLines(document.getElementById("description").value);
+    const specifications = parseSpecifications(document.getElementById("specifications").value);
+
+    const slug = slugify(shortTitle || name);
 
     const payload = {
       name,
@@ -245,7 +232,7 @@ async function saveEquipment(event) {
     await loadEquipmentList();
   } catch (error) {
     console.error("Save equipment failed:", error);
-    saveStatus.textContent = "Equipment save failed.";
+    saveStatus.textContent = error.message || "Equipment save failed.";
   }
 }
 
@@ -256,7 +243,6 @@ function fillEquipmentForm(id, item) {
   document.getElementById("name").value = item.name || "";
   document.getElementById("shortTitle").value = item.shortTitle || "";
   document.getElementById("detailTitle").value = item.detailTitle || "";
-  document.getElementById("categorySlug").value = item.categorySlug || "";
   document.getElementById("inventory").value = item.inventory ?? 0;
   document.getElementById("maxQuantity").value = item.maxQuantity ?? 1;
   document.getElementById("rentalPrice").value = item.rentalPrice ?? "";
@@ -269,6 +255,16 @@ function fillEquipmentForm(id, item) {
   document.getElementById("specifications").value = (item.specifications || [])
     .map((spec) => `${spec.label}: ${spec.value}`)
     .join("\n");
+
+  if (item.categorySlug) {
+    categorySelect.value = item.categorySlug;
+  } else {
+    categorySelect.value = "";
+  }
+
+  newCategoryNameInput.value = "";
+  newCategorySlugInput.value = "";
+  toggleNewCategoryFields();
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -283,18 +279,6 @@ async function removeEquipment(id) {
   } catch (error) {
     console.error("Delete equipment failed:", error);
   }
-}
-
-function formatPrice(item) {
-  if (
-    item.rentalPrice === undefined ||
-    item.rentalPrice === null ||
-    item.rentalPrice === ""
-  ) {
-    return "No price";
-  }
-
-  return `${item.rentalPrice} NOK${item.priceUnit ? ` / ${item.priceUnit}` : ""}`;
 }
 
 async function loadEquipmentList() {
@@ -332,7 +316,8 @@ async function loadEquipmentList() {
         </div>
       `;
 
-      row.querySelector(".edit-equipment-button").addEventListener("click", () => {
+      row.querySelector(".edit-equipment-button").addEventListener("click", async () => {
+        await loadCategoriesIntoSelect(item.categorySlug || "");
         fillEquipmentForm(docSnap.id, item);
       });
 
@@ -351,7 +336,7 @@ async function loadEquipmentList() {
 /* ---------------------------
    INIT
 ---------------------------- */
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (!window.location.pathname.includes("/admin/dashboard.html")) return;
 
   if (!user) {
@@ -359,17 +344,12 @@ onAuthStateChanged(auth, (user) => {
     return;
   }
 
-  loadCategories();
-  loadEquipmentList();
+  await loadCategoriesIntoSelect();
+  await loadEquipmentList();
 });
 
-if (categoryForm) {
-  categoryForm.addEventListener("submit", saveCategory);
-}
-
-const cancelCategoryEditButton = document.getElementById("cancel-category-edit-button");
-if (cancelCategoryEditButton) {
-  cancelCategoryEditButton.addEventListener("click", resetCategoryForm);
+if (categorySelect) {
+  categorySelect.addEventListener("change", toggleNewCategoryFields);
 }
 
 if (equipmentForm) {
