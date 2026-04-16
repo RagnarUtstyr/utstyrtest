@@ -10,7 +10,11 @@ function getItemId() {
 }
 
 function formatPrice(item) {
-  if (item.rentalPrice === undefined || item.rentalPrice === null || item.rentalPrice === "") {
+  if (
+    item.rentalPrice === undefined ||
+    item.rentalPrice === null ||
+    item.rentalPrice === ""
+  ) {
     return "<p>Price on request</p>";
   }
 

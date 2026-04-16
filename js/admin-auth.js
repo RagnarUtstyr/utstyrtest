@@ -21,7 +21,9 @@ if (loginForm) {
       window.location.href = "dashboard.html";
     } catch (error) {
       console.error("Login failed:", error);
-      if (authStatus) authStatus.textContent = "Login failed. Check email/password.";
+      if (authStatus) {
+        authStatus.textContent = "Login failed. Check email and password.";
+      }
     }
   });
 }

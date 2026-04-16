@@ -58,6 +58,9 @@
       <label for="alt">Image alt text</label>
       <input type="text" id="alt" />
 
+      <label for="imageUrl">Image path or URL</label>
+      <input type="text" id="imageUrl" placeholder="images/equipment/6x6-grid.jpg" required />
+
       <label for="keywords">Keywords (one per line)</label>
       <textarea id="keywords" rows="6"></textarea>
 
@@ -66,12 +69,6 @@
 
       <label for="specifications">Specifications (one per line, format: Label: Value)</label>
       <textarea id="specifications" rows="8"></textarea>
-
-      <label for="existingImageUrl">Existing image URL (optional)</label>
-      <input type="text" id="existingImageUrl" />
-
-      <label for="imageFile">Upload image</label>
-      <input type="file" id="imageFile" accept="image/*" />
 
       <label style="display:flex; align-items:center; gap:10px; margin-top:20px;">
         <input type="checkbox" id="active" checked />

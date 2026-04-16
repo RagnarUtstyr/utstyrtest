@@ -1,4 +1,4 @@
-import { auth, db, storage } from "./firebase-config.js";
+import { auth, db } from "./firebase-config.js";
 import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
@@ -13,11 +13,6 @@ import {
   serverTimestamp,
   updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-import {
-  getDownloadURL,
-  ref,
-  uploadBytes
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
 const form = document.getElementById("equipment-form");
 const equipmentList = document.getElementById("admin-equipment-list");
@@ -55,14 +50,6 @@ function parseSpecifications(text) {
     });
 }
 
-async function uploadImageIfPresent(file, slug) {
-  if (!file) return "";
-
-  const imageRef = ref(storage, `equipment/${slug}-${Date.now()}-${file.name}`);
-  await uploadBytes(imageRef, file);
-  return await getDownloadURL(imageRef);
-}
-
 function resetForm() {
   currentEditId = null;
   form.reset();
@@ -82,22 +69,16 @@ async function saveEquipment(event) {
   const rentalPrice = rentalPriceValue === "" ? null : Number(rentalPriceValue);
   const priceUnit = document.getElementById("priceUnit").value.trim();
   const alt = document.getElementById("alt").value.trim();
+  const imageUrl = document.getElementById("imageUrl").value.trim();
   const active = document.getElementById("active").checked;
   const keywords = parseLines(document.getElementById("keywords").value);
   const description = parseLines(document.getElementById("description").value);
   const specifications = parseSpecifications(document.getElementById("specifications").value);
-  const existingImageUrl = document.getElementById("existingImageUrl").value.trim();
-  const imageFile = document.getElementById("imageFile").files[0];
 
   const slug = slugify(shortTitle || name);
 
   try {
     saveStatus.textContent = "Saving…";
-
-    let imageUrl = existingImageUrl;
-    if (imageFile) {
-      imageUrl = await uploadImageIfPresent(imageFile, slug);
-    }
 
     const payload = {
       name,
@@ -110,11 +91,11 @@ async function saveEquipment(event) {
       rentalPrice,
       priceUnit,
       alt,
+      imageUrl,
       active,
       keywords,
       description,
       specifications,
-      imageUrl,
       updatedAt: serverTimestamp()
     };
 
@@ -149,13 +130,13 @@ function fillForm(id, item) {
   document.getElementById("rentalPrice").value = item.rentalPrice ?? "";
   document.getElementById("priceUnit").value = item.priceUnit || "";
   document.getElementById("alt").value = item.alt || "";
+  document.getElementById("imageUrl").value = item.imageUrl || "";
   document.getElementById("active").checked = !!item.active;
   document.getElementById("keywords").value = (item.keywords || []).join("\n");
   document.getElementById("description").value = (item.description || []).join("\n");
   document.getElementById("specifications").value = (item.specifications || [])
     .map((spec) => `${spec.label}: ${spec.value}`)
     .join("\n");
-  document.getElementById("existingImageUrl").value = item.imageUrl || "";
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -173,9 +154,14 @@ async function removeEquipment(id) {
 }
 
 function formatPrice(item) {
-  if (item.rentalPrice === undefined || item.rentalPrice === null || item.rentalPrice === "") {
+  if (
+    item.rentalPrice === undefined ||
+    item.rentalPrice === null ||
+    item.rentalPrice === ""
+  ) {
     return "No price";
   }
+
   return `${item.rentalPrice} NOK${item.priceUnit ? ` / ${item.priceUnit}` : ""}`;
 }
 
@@ -232,10 +218,12 @@ async function loadEquipmentList() {
 
 onAuthStateChanged(auth, (user) => {
   if (!window.location.pathname.includes("/admin/dashboard.html")) return;
+
   if (!user) {
     window.location.href = "login.html";
     return;
   }
+
   loadEquipmentList();
 });
 

@@ -14,7 +14,11 @@ function normalizeText(value) {
 }
 
 function formatPrice(item) {
-  if (item.rentalPrice === undefined || item.rentalPrice === null || item.rentalPrice === "") {
+  if (
+    item.rentalPrice === undefined ||
+    item.rentalPrice === null ||
+    item.rentalPrice === ""
+  ) {
     return "";
   }
 
@@ -46,6 +50,8 @@ function buildCard(docId, item) {
   button.addEventListener("click", () => {
     if (typeof addToBasket === "function") {
       addToBasket(name, maxQuantity);
+    } else {
+      console.warn("addToBasket is not available.");
     }
   });
 
@@ -59,7 +65,7 @@ function renderEquipment(items) {
   grid.innerHTML = "";
 
   if (!items.length) {
-    grid.innerHTML = `<p>No equipment found.</p>`;
+    grid.innerHTML = "<p>No equipment found.</p>";
     return;
   }
 
