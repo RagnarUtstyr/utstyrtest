@@ -8,7 +8,6 @@ import {
   deleteDoc,
   doc,
   getDocs,
-  orderBy,
   query,
   serverTimestamp,
   updateDoc,
@@ -77,6 +76,15 @@ function formatPrice(item) {
   return `${item.rentalPrice} NOK`;
 }
 
+function sortCategories(categories) {
+  return [...categories].sort((a, b) => {
+    const aOrder = Number(a.sortOrder ?? 999999);
+    const bOrder = Number(b.sortOrder ?? 999999);
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return (a.name || "").localeCompare(b.name || "");
+  });
+}
+
 function toggleNewCategoryFields() {
   const isNew = categorySelect.value === "__new__";
   newCategoryNameField.classList.toggle("hidden", !isNew);
@@ -86,17 +94,19 @@ function toggleNewCategoryFields() {
   newCategorySlugInput.required = isNew;
 }
 
+async function fetchAllCategories() {
+  const snapshot = await getDocs(query(collection(db, "categories")));
+  return snapshot.docs.map((docSnap) => ({
+    id: docSnap.id,
+    ...docSnap.data()
+  }));
+}
+
 async function loadCategoriesIntoSelect(selectedSlug = "") {
   if (!categorySelect) return;
 
   try {
-    const categoriesQuery = query(collection(db, "categories"), orderBy("sortOrder"));
-    const snapshot = await getDocs(categoriesQuery);
-
-    categoriesCache = snapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      ...docSnap.data()
-    }));
+    categoriesCache = sortCategories(await fetchAllCategories());
 
     categorySelect.innerHTML = `
       <option value="">Select category</option>
@@ -151,10 +161,11 @@ async function ensureCategoryExists() {
     return newCategorySlug;
   }
 
+  const sorted = sortCategories(categoriesCache);
   const nextSortOrder =
-    categoriesCache.length > 0
-      ? Math.max(...categoriesCache.map((category) => Number(category.sortOrder || 0))) + 1
-      : 0;
+    sorted.length > 0
+      ? Math.max(...sorted.map((category) => Number(category.sortOrder || 0))) + 10
+      : 10;
 
   await addDoc(collection(db, "categories"), {
     name: newCategoryName,
@@ -270,6 +281,7 @@ async function removeEquipment(id) {
   try {
     await deleteDoc(doc(db, "equipment", id));
     await loadEquipmentList();
+    await loadCategoryList();
   } catch (error) {
     console.error("Delete equipment failed:", error);
   }
@@ -334,24 +346,68 @@ async function deleteCategory(categoryId, categorySlug, categoryName) {
   }
 }
 
+async function updateCategorySortOrder(categoryId, newSortOrder) {
+  try {
+    await updateDoc(doc(db, "categories", categoryId), {
+      sortOrder: Number(newSortOrder),
+      updatedAt: serverTimestamp()
+    });
+    await loadCategoriesIntoSelect();
+    await loadCategoryList();
+    saveStatus.textContent = "Category order updated.";
+  } catch (error) {
+    console.error("Update category sort order failed:", error);
+    saveStatus.textContent = "Category order update failed.";
+  }
+}
+
+async function moveCategory(categoryId, direction) {
+  const sorted = sortCategories(categoriesCache);
+  const index = sorted.findIndex((category) => category.id === categoryId);
+  if (index === -1) return;
+
+  const swapIndex = direction === "up" ? index - 1 : index + 1;
+  if (swapIndex < 0 || swapIndex >= sorted.length) return;
+
+  const current = sorted[index];
+  const other = sorted[swapIndex];
+
+  try {
+    await updateDoc(doc(db, "categories", current.id), {
+      sortOrder: Number(other.sortOrder ?? 0),
+      updatedAt: serverTimestamp()
+    });
+
+    await updateDoc(doc(db, "categories", other.id), {
+      sortOrder: Number(current.sortOrder ?? 0),
+      updatedAt: serverTimestamp()
+    });
+
+    await loadCategoriesIntoSelect();
+    await loadCategoryList();
+    saveStatus.textContent = "Category order updated.";
+  } catch (error) {
+    console.error("Move category failed:", error);
+    saveStatus.textContent = "Move category failed.";
+  }
+}
+
 async function loadCategoryList() {
   if (!categoryList) return;
 
   categoryList.innerHTML = "<p class='admin-muted'>Loading categories…</p>";
 
   try {
-    const snapshot = await getDocs(query(collection(db, "categories"), orderBy("sortOrder")));
+    categoriesCache = sortCategories(await fetchAllCategories());
 
-    if (snapshot.empty) {
+    if (categoriesCache.length === 0) {
       categoryList.innerHTML = "<p class='admin-muted'>No categories yet.</p>";
       return;
     }
 
     categoryList.innerHTML = "";
 
-    for (const docSnap of snapshot.docs) {
-      const category = docSnap.data();
-
+    for (const category of categoriesCache) {
       const linkedQuery = query(
         collection(db, "equipment"),
         where("categorySlug", "==", category.slug)
@@ -366,13 +422,35 @@ async function loadCategoryList() {
           <h3>${category.name || "Untitled category"}</h3>
           <p>Slug: ${category.slug || ""} · Items: ${linkedSnapshot.size}</p>
         </div>
-        <div class="admin-list-actions">
+        <div class="admin-category-controls">
+          <input
+            class="admin-sort-input"
+            type="number"
+            value="${Number(category.sortOrder ?? 0)}"
+            aria-label="Sort order for ${category.name || category.slug || "category"}"
+          />
+          <button class="admin-button-secondary move-up-button" type="button">↑</button>
+          <button class="admin-button-secondary move-down-button" type="button">↓</button>
+          <button class="admin-button-secondary save-sort-button" type="button">Save</button>
           <button class="admin-button-danger delete-category-button" type="button">Delete</button>
         </div>
       `;
 
+      row.querySelector(".save-sort-button").addEventListener("click", () => {
+        const newValue = row.querySelector(".admin-sort-input").value;
+        updateCategorySortOrder(category.id, newValue);
+      });
+
+      row.querySelector(".move-up-button").addEventListener("click", () => {
+        moveCategory(category.id, "up");
+      });
+
+      row.querySelector(".move-down-button").addEventListener("click", () => {
+        moveCategory(category.id, "down");
+      });
+
       row.querySelector(".delete-category-button").addEventListener("click", () => {
-        deleteCategory(docSnap.id, category.slug, category.name || category.slug || "category");
+        deleteCategory(category.id, category.slug, category.name || category.slug || "category");
       });
 
       categoryList.appendChild(row);
@@ -389,18 +467,44 @@ async function loadEquipmentList() {
   equipmentList.innerHTML = "<p class='admin-muted'>Loading equipment…</p>";
 
   try {
-    const equipmentQuery = query(collection(db, "equipment"), orderBy("name"));
-    const snapshot = await getDocs(equipmentQuery);
+    categoriesCache = sortCategories(await fetchAllCategories());
 
-    if (snapshot.empty) {
+    const snapshot = await getDocs(query(collection(db, "equipment")));
+    const items = snapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data()
+    }));
+
+    if (items.length === 0) {
       equipmentList.innerHTML = "<p class='admin-muted'>No equipment yet.</p>";
       return;
     }
 
+    const categoryOrderMap = new Map(
+      categoriesCache.map((category, index) => [category.slug, index])
+    );
+
+    items.sort((a, b) => {
+      const aIndex = categoryOrderMap.has(a.categorySlug) ? categoryOrderMap.get(a.categorySlug) : 999999;
+      const bIndex = categoryOrderMap.has(b.categorySlug) ? categoryOrderMap.get(b.categorySlug) : 999999;
+      if (aIndex !== bIndex) return aIndex - bIndex;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+
     equipmentList.innerHTML = "";
 
-    snapshot.forEach((docSnap) => {
-      const item = docSnap.data();
+    let currentCategorySlug = "";
+
+    items.forEach((item) => {
+      if (item.categorySlug !== currentCategorySlug) {
+        currentCategorySlug = item.categorySlug;
+        const categoryMeta = categoriesCache.find((category) => category.slug === currentCategorySlug);
+        const groupTitle = document.createElement("h3");
+        groupTitle.className = "category-group-title";
+        groupTitle.textContent = categoryMeta?.name || currentCategorySlug || "Uncategorized";
+        equipmentList.appendChild(groupTitle);
+      }
+
       const imageUrl = buildImageUrl(item.imageName);
 
       const row = document.createElement("div");
@@ -423,11 +527,11 @@ async function loadEquipmentList() {
 
       row.querySelector(".edit-equipment-button").addEventListener("click", async () => {
         await loadCategoriesIntoSelect(item.categorySlug || "");
-        fillEquipmentForm(docSnap.id, item);
+        fillEquipmentForm(item.id, item);
       });
 
       row.querySelector(".delete-equipment-button").addEventListener("click", () => {
-        removeEquipment(docSnap.id);
+        removeEquipment(item.id);
       });
 
       equipmentList.appendChild(row);

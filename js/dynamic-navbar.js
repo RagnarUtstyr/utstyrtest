@@ -2,22 +2,24 @@ import { db } from "./firebase-config.js";
 import {
   collection,
   getDocs,
-  orderBy,
   query
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-/*
-  Your GitHub Pages site is being served from:
-  https://ragnarutstyr.github.io/utstyrtest/
-
-  So all internal links should start from /utstyrtest/
-*/
 const SITE_BASE_PATH = "/utstyrtest/";
 
 function withBase(path) {
   const cleanBase = SITE_BASE_PATH.endsWith("/") ? SITE_BASE_PATH : `${SITE_BASE_PATH}/`;
   const cleanPath = path.startsWith("/") ? path.slice(1) : path;
   return `${cleanBase}${cleanPath}`;
+}
+
+function sortCategories(categories) {
+  return [...categories].sort((a, b) => {
+    const aOrder = Number(a.sortOrder ?? 999999);
+    const bOrder = Number(b.sortOrder ?? 999999);
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return (a.name || "").localeCompare(b.name || "");
+  });
 }
 
 async function loadNavbar() {
@@ -27,17 +29,12 @@ async function loadNavbar() {
   let categoryLinks = "";
 
   try {
-    const categoriesQuery = query(
-      collection(db, "categories"),
-      orderBy("sortOrder")
+    const snapshot = await getDocs(query(collection(db, "categories")));
+    const categories = sortCategories(
+      snapshot.docs.map((docSnap) => docSnap.data()).filter((category) => category.active !== false)
     );
 
-    const snapshot = await getDocs(categoriesQuery);
-
-    snapshot.forEach((docSnap) => {
-      const category = docSnap.data();
-
-      if (category.active === false) return;
+    categories.forEach((category) => {
       if (!category.slug || !category.name) return;
 
       categoryLinks += `

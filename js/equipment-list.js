@@ -5,10 +5,22 @@ import {
   query
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+const PLACEHOLDER_IMAGE = "/utstyrtest/images/placeholder.png";
+
 let allEquipment = [];
+let allCategories = [];
 
 function normalizeText(value) {
   return (value || "").toString().toLowerCase().trim();
+}
+
+function sortCategories(categories) {
+  return [...categories].sort((a, b) => {
+    const aOrder = Number(a.sortOrder ?? 999999);
+    const bOrder = Number(b.sortOrder ?? 999999);
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return (a.name || "").localeCompare(b.name || "");
+  });
 }
 
 function formatPrice(item) {
@@ -28,7 +40,7 @@ function buildCard(docId, item) {
   card.className = "nav-card";
   card.dataset.keywords = (item.keywords || []).join(" ").toLowerCase();
 
-  const imageUrl = item.imageUrl || "/utstyrtest/images/placeholder.png";
+  const imageUrl = item.imageUrl || PLACEHOLDER_IMAGE;
   const title = item.name || "Untitled item";
   const priceText = formatPrice(item);
 
@@ -54,8 +66,40 @@ function renderEquipment(items) {
     return;
   }
 
+  const categoryMap = new Map(allCategories.map((category) => [category.slug, category]));
+  const grouped = new Map();
+
   items.forEach(({ id, data }) => {
-    grid.appendChild(buildCard(id, data));
+    const slug = data.categorySlug || "__uncategorized__";
+    if (!grouped.has(slug)) grouped.set(slug, []);
+    grouped.get(slug).push({ id, data });
+  });
+
+  const orderedSlugs = [
+    ...allCategories.map((category) => category.slug).filter((slug) => grouped.has(slug)),
+    ...[...grouped.keys()].filter((slug) => !allCategories.some((category) => category.slug === slug))
+  ];
+
+  orderedSlugs.forEach((slug) => {
+    const category = categoryMap.get(slug);
+    const title = category?.name || slug || "Uncategorized";
+
+    const heading = document.createElement("h2");
+    heading.className = "category-group-title";
+    heading.textContent = title;
+    grid.appendChild(heading);
+
+    const groupWrap = document.createElement("div");
+    groupWrap.className = "content-grid";
+
+    grouped
+      .get(slug)
+      .sort((a, b) => (a.data.name || "").localeCompare(b.data.name || ""))
+      .forEach(({ id, data }) => {
+        groupWrap.appendChild(buildCard(id, data));
+      });
+
+    grid.appendChild(groupWrap);
   });
 }
 
@@ -89,18 +133,23 @@ async function loadEquipment() {
   grid.innerHTML = "<p>Loading equipment…</p>";
 
   try {
-    const equipmentRef = collection(db, "equipment");
-    const equipmentQuery = query(equipmentRef);
+    const [equipmentSnapshot, categorySnapshot] = await Promise.all([
+      getDocs(query(collection(db, "equipment"))),
+      getDocs(query(collection(db, "categories")))
+    ]);
 
-    const snapshot = await getDocs(equipmentQuery);
+    allCategories = sortCategories(
+      categorySnapshot.docs
+        .map((docSnap) => docSnap.data())
+        .filter((category) => category.active !== false)
+    );
 
-    allEquipment = snapshot.docs
+    allEquipment = equipmentSnapshot.docs
       .map((docSnap) => ({
         id: docSnap.id,
         data: docSnap.data()
       }))
-      .filter(({ data }) => data.active !== false)
-      .sort((a, b) => (a.data.name || "").localeCompare(b.data.name || ""));
+      .filter(({ data }) => data.active !== false);
 
     renderEquipment(allEquipment);
 
