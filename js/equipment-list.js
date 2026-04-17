@@ -38,7 +38,7 @@ function formatPrice(item) {
 function formatInventory(item) {
   const inventory = Number(item.inventory || 0);
 
-  if (inventory > 1) {
+  if (inventory >= 1) {
     return `${inventory} in stock`;
   }
 
