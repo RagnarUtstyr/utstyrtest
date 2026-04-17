@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact</title>
+    <link rel="icon" type="image/png" sizes="64x64" href="images/favicon-64x64.png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="contact.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header>
+    <div class="logo">
+        <a href="index.html">
+            <img src="images/logo.png" alt="Ragnar Bøe Utstyrsleie Logo">
+        </a>
+    </div>
+
+    <div id="search-bar-container">
+        <input type="text" id="global-search-field" placeholder="Search" autocomplete="off">
+        <div id="dropdown-results" class="dropdown-results"></div>
+    </div>
+
+    <div class="basket-icon-container">
+        <a href="basket.html">
+            <img src="images/basket-icon.png" alt="Basket" class="basket-icon"/>
+            <span id="basket-icon-count">0</span>
+        </a>
+    </div>
+
+    <nav id="main-navbar"></nav>
+</header>
+
+<main>
+    <h1>Contact Us</h1>
+
+    <a><strong>Please fill up your basket with the equipment you wish to rent, then fill out the contact form</strong></a>
+    <br><br>
+
+    <form id="contact-form">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="from_name" required>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="from_email" required>
+
+        <label for="from_date">From Date:</label>
+        <input type="date" id="from_date" name="from_date" required>
+
+        <label for="to_date">To Date:</label>
+        <input type="date" id="to_date" name="to_date" required>
+
+        <label for="message">Message:</label>
+        <textarea id="message" name="message" rows="5" required></textarea>
+
+        <button type="submit" id="send-button" class="contact-submit-button">Send Inquiry</button>
+    </form>
+</main>
+
+<footer>
+    <p>© 2024 Bergen Utstyrsleie</p>
+</footer>
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script type="text/javascript">
+    (function(){
+        emailjs.init("jEPsmc03XiqQMqiy5");
+    })();
+</script>
+
+<script src="contact.js"></script>
+<script src="basket.js"></script>
+<script type="module" src="js/search.js"></script>
+<script type="module" src="js/dynamic-navbar.js"></script>
+</body>
+</html>

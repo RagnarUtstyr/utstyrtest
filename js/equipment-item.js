@@ -4,6 +4,8 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+const PLACEHOLDER_IMAGE = "/utstyrtest/images/placeholder.png";
+
 function getItemId() {
   const params = new URLSearchParams(window.location.search);
   return params.get("id");
@@ -69,10 +71,15 @@ async function loadEquipmentItem() {
     }
 
     const item = itemSnap.data();
-    const imageUrl = item.imageUrl || "/images/placeholder.png";
+    const imageUrl = item.imageUrl || PLACEHOLDER_IMAGE;
     const title = item.name || "Untitled item";
+    const maxQuantity = Math.max(Number(item.inventory || 1), 1);
 
     container.innerHTML = `
+      <div>
+        <button class="rtn-add-to-basket" id="detail-add-button">Add to Basket</button>
+      </div>
+
       <main>
         <h1>${title}</h1>
 
@@ -100,6 +107,15 @@ async function loadEquipmentItem() {
         </div>
       </main>
     `;
+
+    const addButton = document.getElementById("detail-add-button");
+    if (addButton) {
+      addButton.addEventListener("click", () => {
+        if (typeof addToBasket === "function") {
+          addToBasket(title, maxQuantity);
+        }
+      });
+    }
   } catch (error) {
     console.error("Error loading equipment item:", error);
     container.innerHTML = "<p>Could not load equipment item.</p>";

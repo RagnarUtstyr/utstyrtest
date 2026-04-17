@@ -6,6 +6,8 @@ import {
   where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+const PLACEHOLDER_IMAGE = "/utstyrtest/images/placeholder.png";
+
 let allEquipment = [];
 let currentCategorySlug = "";
 
@@ -33,11 +35,16 @@ function formatPrice(item) {
 function buildCard(docId, item) {
   const card = document.createElement("div");
   card.className = "nav-card";
-  card.dataset.keywords = (item.keywords || []).join(" ").toLowerCase();
+  card.dataset.keywords = [
+    item.name,
+    item.categorySlug,
+    ...(item.keywords || [])
+  ].join(" ").toLowerCase();
 
-  const imageUrl = item.imageUrl || "/images/placeholder.png";
+  const imageUrl = item.imageUrl || PLACEHOLDER_IMAGE;
   const title = item.name || "Untitled item";
   const priceText = formatPrice(item);
+  const maxQuantity = Math.max(Number(item.inventory || 1), 1);
 
   card.innerHTML = `
     <a href="equipment-item.html?id=${encodeURIComponent(docId)}">
@@ -45,7 +52,15 @@ function buildCard(docId, item) {
       <h2>${title}</h2>
     </a>
     ${priceText ? `<p><strong>${priceText}</strong></p>` : ""}
+    <button class="rtn-add-to-basket">Add to Basket</button>
   `;
+
+  const addButton = card.querySelector(".rtn-add-to-basket");
+  addButton.addEventListener("click", () => {
+    if (typeof addToBasket === "function") {
+      addToBasket(title, maxQuantity);
+    }
+  });
 
   return card;
 }
