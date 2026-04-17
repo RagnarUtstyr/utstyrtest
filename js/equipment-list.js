@@ -66,40 +66,8 @@ function renderEquipment(items) {
     return;
   }
 
-  const categoryMap = new Map(allCategories.map((category) => [category.slug, category]));
-  const grouped = new Map();
-
   items.forEach(({ id, data }) => {
-    const slug = data.categorySlug || "__uncategorized__";
-    if (!grouped.has(slug)) grouped.set(slug, []);
-    grouped.get(slug).push({ id, data });
-  });
-
-  const orderedSlugs = [
-    ...allCategories.map((category) => category.slug).filter((slug) => grouped.has(slug)),
-    ...[...grouped.keys()].filter((slug) => !allCategories.some((category) => category.slug === slug))
-  ];
-
-  orderedSlugs.forEach((slug) => {
-    const category = categoryMap.get(slug);
-    const title = category?.name || slug || "Uncategorized";
-
-    const heading = document.createElement("h2");
-    heading.className = "category-group-title";
-    heading.textContent = title;
-    grid.appendChild(heading);
-
-    const groupWrap = document.createElement("div");
-    groupWrap.className = "content-grid";
-
-    grouped
-      .get(slug)
-      .sort((a, b) => (a.data.name || "").localeCompare(b.data.name || ""))
-      .forEach(({ id, data }) => {
-        groupWrap.appendChild(buildCard(id, data));
-      });
-
-    grid.appendChild(groupWrap);
+    grid.appendChild(buildCard(id, data));
   });
 }
 
@@ -144,12 +112,27 @@ async function loadEquipment() {
         .filter((category) => category.active !== false)
     );
 
+    const categoryOrderMap = new Map(
+      allCategories.map((category, index) => [category.slug, index])
+    );
+
     allEquipment = equipmentSnapshot.docs
       .map((docSnap) => ({
         id: docSnap.id,
         data: docSnap.data()
       }))
-      .filter(({ data }) => data.active !== false);
+      .filter(({ data }) => data.active !== false)
+      .sort((a, b) => {
+        const aIndex = categoryOrderMap.has(a.data.categorySlug)
+          ? categoryOrderMap.get(a.data.categorySlug)
+          : 999999;
+        const bIndex = categoryOrderMap.has(b.data.categorySlug)
+          ? categoryOrderMap.get(b.data.categorySlug)
+          : 999999;
+
+        if (aIndex !== bIndex) return aIndex - bIndex;
+        return (a.data.name || "").localeCompare(b.data.name || "");
+      });
 
     renderEquipment(allEquipment);
 
