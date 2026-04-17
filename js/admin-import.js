@@ -18,7 +18,11 @@ const loadFileButton = document.getElementById("loadFileButton");
 const validateJsonButton = document.getElementById("validateJsonButton");
 const importJsonButton = document.getElementById("importJsonButton");
 const importModeSelect = document.getElementById("importMode");
-const importResult = document.getElementById("importResult");
+const resultBox = document.getElementById("result");
+
+function setResult(message) {
+  resultBox.textContent = message;
+}
 
 function slugify(value) {
   return (value || "")
@@ -27,10 +31,6 @@ function slugify(value) {
     .replace(/[^a-z0-9æøå\s-]/gi, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
-}
-
-function setResult(message) {
-  importResult.textContent = message;
 }
 
 function parseJsonInput() {
@@ -58,7 +58,6 @@ function normalizeArrayOfStrings(value) {
 
 function normalizeSpecifications(value) {
   if (!Array.isArray(value)) return [];
-
   return value
     .map((spec) => ({
       label: (spec?.label || "").toString().trim(),
@@ -84,26 +83,6 @@ function validateItem(item, index) {
 
   if (!item.imageName || typeof item.imageName !== "string") {
     errors.push(`Item ${index + 1}: missing or invalid "imageName".`);
-  }
-
-  if (item.inventory !== undefined && typeof item.inventory !== "number") {
-    errors.push(`Item ${index + 1}: "inventory" must be a number if present.`);
-  }
-
-  if (item.rentalPrice !== undefined && item.rentalPrice !== null && typeof item.rentalPrice !== "number") {
-    errors.push(`Item ${index + 1}: "rentalPrice" must be a number or null.`);
-  }
-
-  if (item.keywords !== undefined && !Array.isArray(item.keywords)) {
-    errors.push(`Item ${index + 1}: "keywords" must be an array.`);
-  }
-
-  if (item.description !== undefined && !Array.isArray(item.description)) {
-    errors.push(`Item ${index + 1}: "description" must be an array.`);
-  }
-
-  if (item.specifications !== undefined && !Array.isArray(item.specifications)) {
-    errors.push(`Item ${index + 1}: "specifications" must be an array.`);
   }
 
   return errors;
@@ -134,7 +113,6 @@ function normalizeItem(item) {
 
 async function loadFileIntoTextbox() {
   const file = jsonFileInput.files?.[0];
-
   if (!file) {
     setResult("No file selected.");
     return;
@@ -148,7 +126,6 @@ async function loadFileIntoTextbox() {
 function validateJsonOnly() {
   try {
     const parsed = parseJsonInput();
-
     const errors = parsed.flatMap((item, index) => validateItem(item, index));
 
     if (errors.length) {
@@ -158,17 +135,12 @@ function validateJsonOnly() {
 
     setResult(`Validation successful.\n\nItems found: ${parsed.length}`);
   } catch (error) {
-    console.error(error);
     setResult(`Validation failed:\n\n${error.message}`);
   }
 }
 
 async function findCategoryBySlug(categorySlug) {
-  const q = query(
-    collection(db, "categories"),
-    where("slug", "==", categorySlug)
-  );
-
+  const q = query(collection(db, "categories"), where("slug", "==", categorySlug));
   const snapshot = await getDocs(q);
   return snapshot.empty ? null : snapshot.docs[0];
 }
@@ -201,11 +173,7 @@ async function ensureCategoryExists(categorySlug) {
 }
 
 async function findEquipmentBySlug(slug) {
-  const q = query(
-    collection(db, "equipment"),
-    where("slug", "==", slug)
-  );
-
+  const q = query(collection(db, "equipment"), where("slug", "==", slug));
   const snapshot = await getDocs(q);
   return snapshot.empty ? null : snapshot.docs[0];
 }
@@ -257,11 +225,7 @@ async function importJson() {
     }
 
     setResult(
-      `Import finished.\n\n` +
-      `Created: ${created}\n` +
-      `Updated: ${updated}\n` +
-      `Skipped: ${skipped}\n` +
-      `Total processed: ${parsed.length}`
+      `Import finished.\n\nCreated: ${created}\nUpdated: ${updated}\nSkipped: ${skipped}\nTotal processed: ${parsed.length}`
     );
   } catch (error) {
     console.error(error);
@@ -277,14 +241,6 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-if (loadFileButton) {
-  loadFileButton.addEventListener("click", loadFileIntoTextbox);
-}
-
-if (validateJsonButton) {
-  validateJsonButton.addEventListener("click", validateJsonOnly);
-}
-
-if (importJsonButton) {
-  importJsonButton.addEventListener("click", importJson);
-}
+loadFileButton?.addEventListener("click", loadFileIntoTextbox);
+validateJsonButton?.addEventListener("click", validateJsonOnly);
+importJsonButton?.addEventListener("click", importJson);
