@@ -6,7 +6,7 @@ import {
   where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-const PLACEHOLDER_IMAGE = "/utstyrtest/images/placeholder.png";
+const PLACEHOLDER_IMAGE = "/images/placeholder.png";
 
 let allEquipment = [];
 let currentCategorySlug = "";
