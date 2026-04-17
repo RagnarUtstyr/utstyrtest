@@ -896,3 +896,12 @@ input, textarea {
   height: auto;
   object-fit: contain;
 }
+
+.nav-card-meta {
+  margin-top: 6px;
+}
+
+.nav-card-price,
+.nav-card-stock {
+  margin: 4px 0;
+}

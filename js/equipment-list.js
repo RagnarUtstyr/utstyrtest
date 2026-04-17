@@ -35,6 +35,32 @@ function formatPrice(item) {
   return `${item.rentalPrice} NOK`;
 }
 
+function formatInventory(item) {
+  const inventory = Number(item.inventory || 0);
+
+  if (inventory > 1) {
+    return `${inventory} in stock`;
+  }
+
+  return "";
+}
+
+function buildMetaHtml(item) {
+  const priceText = formatPrice(item);
+  const inventoryText = formatInventory(item);
+
+  if (!priceText && !inventoryText) {
+    return "";
+  }
+
+  return `
+    <div class="nav-card-meta">
+      ${priceText ? `<p class="nav-card-price"><strong>${priceText}</strong></p>` : ""}
+      ${inventoryText ? `<p class="nav-card-stock">${inventoryText}</p>` : ""}
+    </div>
+  `;
+}
+
 function buildCard(docId, item) {
   const card = document.createElement("div");
   card.className = "nav-card";
@@ -46,7 +72,6 @@ function buildCard(docId, item) {
 
   const imageUrl = item.imageUrl || PLACEHOLDER_IMAGE;
   const title = item.name || "Untitled item";
-  const priceText = formatPrice(item);
   const maxQuantity = Math.max(Number(item.inventory || 1), 1);
 
   card.innerHTML = `
@@ -54,7 +79,7 @@ function buildCard(docId, item) {
       <img src="${imageUrl}" alt="${title}" loading="lazy" />
       <h2>${title}</h2>
     </a>
-    ${priceText ? `<p><strong>${priceText}</strong></p>` : ""}
+    ${buildMetaHtml(item)}
     <button class="rtn-add-to-basket">Add to Basket</button>
   `;
 
