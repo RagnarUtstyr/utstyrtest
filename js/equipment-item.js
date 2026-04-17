@@ -112,7 +112,7 @@ async function loadEquipmentItem() {
     if (addButton) {
       addButton.addEventListener("click", () => {
         if (typeof addToBasket === "function") {
-          addToBasket(title, maxQuantity);
+          addToBasket(title, maxQuantity, item.rentalPrice);
         }
       });
     }

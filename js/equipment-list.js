@@ -97,7 +97,7 @@ function buildCard(docId, item) {
   const addButton = card.querySelector(".rtn-add-to-basket");
   addButton.addEventListener("click", () => {
     if (typeof addToBasket === "function") {
-      addToBasket(title, maxQuantity);
+      addToBasket(title, maxQuantity, item.rentalPrice);
     }
   });
 

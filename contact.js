@@ -1,23 +1,56 @@
-// Initialize EmailJS
-emailjs.init('jEPsmc03XiqQMqiy5'); // Replace with your actual User ID from EmailJS
+emailjs.init('jEPsmc03XiqQMqiy5');
 
-// Handle form submission
+function getBasket() {
+    return JSON.parse(localStorage.getItem('basket') || '{}');
+}
+
+function normalizeBasketEntry(entry) {
+    if (typeof entry === 'number') {
+        return {
+            quantity: entry,
+            unitPrice: null
+        };
+    }
+
+    return {
+        quantity: Number(entry?.quantity || 0),
+        unitPrice:
+            entry?.unitPrice === undefined || entry?.unitPrice === null || entry?.unitPrice === ''
+                ? null
+                : Number(entry.unitPrice)
+    };
+}
+
+function formatPrice(value) {
+    if (value === null || value === undefined || value === '' || Number.isNaN(Number(value))) {
+        return 'Price on request';
+    }
+    return `${Number(value)} NOK`;
+}
+
+function formatLineTotal(quantity, unitPrice) {
+    if (unitPrice === null || unitPrice === undefined || unitPrice === '' || Number.isNaN(Number(unitPrice))) {
+        return 'Price on request';
+    }
+    return `${Number(quantity) * Number(unitPrice)} NOK`;
+}
+
 document.getElementById('contact-form').addEventListener('submit', function(event) {
-    event.preventDefault(); // Prevent default form submission
+    event.preventDefault();
 
-    // Get form values
     let from_name = document.getElementById('name').value;
     let from_email = document.getElementById('email').value;
     let from_date = document.getElementById('from_date').value;
     let to_date = document.getElementById('to_date').value;
     let message = document.getElementById('message').value;
 
-    // Get basket items from localStorage
-    let basket = JSON.parse(localStorage.getItem('basket') || '{}');
+    let basket = getBasket();
     let basketContent = '';
+
     for (let item in basket) {
         if (basket.hasOwnProperty(item)) {
-            basketContent += `${item}: ${basket[item]} units\n`;
+            const entry = normalizeBasketEntry(basket[item]);
+            basketContent += `${item}: ${entry.quantity} unit(s) | Unit price: ${formatPrice(entry.unitPrice)} | Full price: ${formatLineTotal(entry.quantity, entry.unitPrice)}\n`;
         }
     }
 
@@ -25,10 +58,6 @@ document.getElementById('contact-form').addEventListener('submit', function(even
         basketContent = 'Basket is empty.';
     }
 
-    // Debugging: Log basket content
-    console.log('Basket Content:', basketContent);
-
-    // Prepare the email parameters
     let templateParams = {
         from_name: from_name,
         from_email: from_email,
@@ -38,14 +67,10 @@ document.getElementById('contact-form').addEventListener('submit', function(even
         basket_items: basketContent
     };
 
-    // Debugging: Log template parameters
-    console.log('Template Parameters:', templateParams);
-
-    // Send the email using EmailJS
     emailjs.send('service_2gyl3vr', 'template_ijqjjne', templateParams)
-        .then(function(response) {
+        .then(function() {
             alert('Your inquiry has been sent successfully!');
-            document.getElementById('contact-form').reset(); // Reset the form
+            document.getElementById('contact-form').reset();
         }, function(error) {
             alert('There was an error sending your inquiry. Please try again later.');
             console.error('EmailJS Error:', error);
