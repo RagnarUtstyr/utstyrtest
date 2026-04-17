@@ -47,12 +47,17 @@ document.getElementById('contact-form').addEventListener('submit', function(even
     let basket = getBasket();
     let basketContent = '';
 
-    for (let item in basket) {
-        if (basket.hasOwnProperty(item)) {
-            const entry = normalizeBasketEntry(basket[item]);
-            basketContent += `${item}: ${entry.quantity} unit(s) | Unit price: ${formatPrice(entry.unitPrice)} | Full price: ${formatLineTotal(entry.quantity, entry.unitPrice)}\n`;
-        }
+for (let item in basket) {
+    if (basket.hasOwnProperty(item)) {
+        const entry = normalizeBasketEntry(basket[item]);
+        basketContent += `${item}
+Quantity: ${entry.quantity}
+Unit price: ${formatPrice(entry.unitPrice)}
+Full price: ${formatLineTotal(entry.quantity, entry.unitPrice)}
+
+`;
     }
+}
 
     if (basketContent === '') {
         basketContent = 'Basket is empty.';
