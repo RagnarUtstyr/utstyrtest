@@ -39,26 +39,34 @@ function formatInventory(item) {
   const inventory = Number(item.inventory || 0);
 
   if (inventory >= 1) {
-    return `${inventory} in stock`;
+    return `${inventory} available`;
   }
 
   return "";
 }
 
 function buildOverlayHtml(item) {
-  const priceText = formatPrice(item);
   const inventoryText = formatInventory(item);
 
-  if (!priceText && !inventoryText) {
+  if (!inventoryText) {
     return "";
   }
 
   return `
-    <div class="nav-card-overlay">
-      ${priceText ? `<span class="nav-card-badge nav-card-price">${priceText}</span>` : ""}
-      ${inventoryText ? `<span class="nav-card-badge nav-card-stock">${inventoryText}</span>` : ""}
+    <div class="nav-card-overlay nav-card-overlay-right">
+      <span class="nav-card-badge nav-card-stock">${inventoryText}</span>
     </div>
   `;
+}
+
+function buildPriceHtml(item) {
+  const priceText = formatPrice(item);
+
+  if (!priceText) {
+    return "";
+  }
+
+  return `<p class="nav-card-bottom-price">${priceText}</p>`;
 }
 
 function buildCard(docId, item) {
@@ -83,6 +91,7 @@ function buildCard(docId, item) {
       <h2>${title}</h2>
     </a>
     <button class="rtn-add-to-basket">Add to Basket</button>
+    ${buildPriceHtml(item)}
   `;
 
   const addButton = card.querySelector(".rtn-add-to-basket");
