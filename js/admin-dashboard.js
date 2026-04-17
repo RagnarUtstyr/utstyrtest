@@ -25,6 +25,7 @@ const newCategoryNameField = document.getElementById("newCategoryNameField");
 const newCategorySlugField = document.getElementById("newCategorySlugField");
 const newCategoryNameInput = document.getElementById("newCategoryName");
 const newCategorySlugInput = document.getElementById("newCategorySlug");
+const clearAllEquipmentButton = document.getElementById("clear-all-equipment-button");
 
 let currentEquipmentEditId = null;
 let categoriesCache = [];
@@ -51,17 +52,16 @@ function parseSpecifications(text) {
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const [label, ...rest] = line.split(":");
-      return {
-        label: (label || "").trim(),
-        value: rest.join(":").trim()
-      };
+      const parts = line.split(":");
+      const label = (parts.shift() || "").trim();
+      const value = parts.join(":").trim();
+      return { label, value };
     });
 }
 
 function buildImageUrl(imageName) {
   const cleanName = (imageName || "").trim().replace(/^\/+/, "");
-  return cleanName ? `${IMAGE_BASE_PATH}${cleanName}` : "/images/placeholder.png";
+  return cleanName ? `${IMAGE_BASE_PATH}${cleanName}` : "/utstyrtest/images/placeholder.png";
 }
 
 function formatPrice(item) {
@@ -273,6 +273,35 @@ async function removeEquipment(id) {
   }
 }
 
+async function clearAllEquipment() {
+  const firstConfirm = window.confirm(
+    "Delete ALL equipment items? This does not delete categories."
+  );
+  if (!firstConfirm) return;
+
+  const secondConfirm = window.confirm(
+    "Are you absolutely sure? This removes every document in the equipment collection."
+  );
+  if (!secondConfirm) return;
+
+  try {
+    saveStatus.textContent = "Deleting all equipment…";
+
+    const snapshot = await getDocs(collection(db, "equipment"));
+
+    for (const docSnap of snapshot.docs) {
+      await deleteDoc(doc(db, "equipment", docSnap.id));
+    }
+
+    resetEquipmentForm();
+    await loadEquipmentList();
+    saveStatus.textContent = "All equipment deleted.";
+  } catch (error) {
+    console.error("Clear all equipment failed:", error);
+    saveStatus.textContent = "Clear all equipment failed.";
+  }
+}
+
 async function loadEquipmentList() {
   if (!equipmentList) return;
 
@@ -349,6 +378,10 @@ if (categorySelect) {
 
 if (equipmentForm) {
   equipmentForm.addEventListener("submit", saveEquipment);
+}
+
+if (clearAllEquipmentButton) {
+  clearAllEquipmentButton.addEventListener("click", clearAllEquipment);
 }
 
 const cancelEquipmentEditButton = document.getElementById("cancel-edit-button");
