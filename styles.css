@@ -905,3 +905,43 @@ input, textarea {
 .nav-card-stock {
   margin: 4px 0;
 }
+
+.nav-card-image-wrap {
+  position: relative;
+}
+
+.nav-card-image-wrap img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.nav-card-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.nav-card-badge {
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.2;
+  backdrop-filter: blur(2px);
+}
+
+.nav-card-price {
+  margin-right: auto;
+}
+
+.nav-card-stock {
+  margin-left: auto;
+}

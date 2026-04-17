@@ -45,7 +45,7 @@ function formatInventory(item) {
   return "";
 }
 
-function buildMetaHtml(item) {
+function buildOverlayHtml(item) {
   const priceText = formatPrice(item);
   const inventoryText = formatInventory(item);
 
@@ -54,9 +54,9 @@ function buildMetaHtml(item) {
   }
 
   return `
-    <div class="nav-card-meta">
-      ${priceText ? `<p class="nav-card-price"><strong>${priceText}</strong></p>` : ""}
-      ${inventoryText ? `<p class="nav-card-stock">${inventoryText}</p>` : ""}
+    <div class="nav-card-overlay">
+      ${priceText ? `<span class="nav-card-badge nav-card-price">${priceText}</span>` : ""}
+      ${inventoryText ? `<span class="nav-card-badge nav-card-stock">${inventoryText}</span>` : ""}
     </div>
   `;
 }
@@ -76,10 +76,12 @@ function buildCard(docId, item) {
 
   card.innerHTML = `
     <a href="equipment-item.html?id=${encodeURIComponent(docId)}">
-      <img src="${imageUrl}" alt="${title}" loading="lazy" />
+      <div class="nav-card-image-wrap">
+        <img src="${imageUrl}" alt="${title}" loading="lazy" />
+        ${buildOverlayHtml(item)}
+      </div>
       <h2>${title}</h2>
     </a>
-    ${buildMetaHtml(item)}
     <button class="rtn-add-to-basket">Add to Basket</button>
   `;
 
