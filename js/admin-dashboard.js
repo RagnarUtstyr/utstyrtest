@@ -27,8 +27,19 @@ const newCategoryNameInput = document.getElementById("newCategoryName");
 const newCategorySlugInput = document.getElementById("newCategorySlug");
 const clearAllEquipmentButton = document.getElementById("clear-all-equipment-button");
 
+const editModal = document.getElementById("edit-equipment-modal");
+const editEquipmentForm = document.getElementById("edit-equipment-form");
+const editCategorySelect = document.getElementById("edit-categorySelect");
+const editNewCategoryNameField = document.getElementById("edit-newCategoryNameField");
+const editNewCategorySlugField = document.getElementById("edit-newCategorySlugField");
+const editNewCategoryNameInput = document.getElementById("edit-newCategoryName");
+const editNewCategorySlugInput = document.getElementById("edit-newCategorySlug");
+const closeEditModalButton = document.getElementById("close-edit-modal-button");
+const cancelEditModalButton = document.getElementById("cancel-edit-modal-button");
+
 let currentEquipmentEditId = null;
 let categoriesCache = [];
+let equipmentExpandedState = {};
 
 function slugify(value) {
   return (value || "")
@@ -61,7 +72,7 @@ function parseSpecifications(text) {
 
 function buildImageUrl(imageName) {
   const cleanName = (imageName || "").trim().replace(/^\/+/, "");
-  return cleanName ? `${IMAGE_BASE_PATH}${cleanName}` : "/utstyrtestV/images/placeholder.png";
+  return cleanName ? `${IMAGE_BASE_PATH}${cleanName}` : "/utstyrtest/images/placeholder.png";
 }
 
 function formatPrice(item) {
@@ -89,9 +100,16 @@ function toggleNewCategoryFields() {
   const isNew = categorySelect.value === "__new__";
   newCategoryNameField.classList.toggle("hidden", !isNew);
   newCategorySlugField.classList.toggle("hidden", !isNew);
-
   newCategoryNameInput.required = isNew;
   newCategorySlugInput.required = isNew;
+}
+
+function toggleEditNewCategoryFields() {
+  const isNew = editCategorySelect.value === "__new__";
+  editNewCategoryNameField.classList.toggle("hidden", !isNew);
+  editNewCategorySlugField.classList.toggle("hidden", !isNew);
+  editNewCategoryNameInput.required = isNew;
+  editNewCategorySlugInput.required = isNew;
 }
 
 async function fetchAllCategories() {
@@ -112,19 +130,14 @@ async function loadCategoriesIntoSelect(selectedSlug = "") {
       <option value="">Select category</option>
       ${categoriesCache
         .filter((category) => category.active !== false)
-        .map(
-          (category) =>
-            `<option value="${category.slug}">${category.name}</option>`
-        )
+        .map((category) => `<option value="${category.slug}">${category.name}</option>`)
         .join("")}
       <option value="__new__">Create new category</option>
     `;
 
     if (selectedSlug) {
       const exists = categoriesCache.some((category) => category.slug === selectedSlug);
-      if (exists) {
-        categorySelect.value = selectedSlug;
-      }
+      if (exists) categorySelect.value = selectedSlug;
     }
 
     toggleNewCategoryFields();
@@ -133,16 +146,37 @@ async function loadCategoriesIntoSelect(selectedSlug = "") {
   }
 }
 
+async function loadCategoriesIntoEditSelect(selectedSlug = "") {
+  if (!editCategorySelect) return;
+
+  try {
+    categoriesCache = sortCategories(await fetchAllCategories());
+
+    editCategorySelect.innerHTML = `
+      <option value="">Select category</option>
+      ${categoriesCache
+        .filter((category) => category.active !== false)
+        .map((category) => `<option value="${category.slug}">${category.name}</option>`)
+        .join("")}
+      <option value="__new__">Create new category</option>
+    `;
+
+    if (selectedSlug) {
+      const exists = categoriesCache.some((category) => category.slug === selectedSlug);
+      if (exists) editCategorySelect.value = selectedSlug;
+    }
+
+    toggleEditNewCategoryFields();
+  } catch (error) {
+    console.error("Failed loading edit categories:", error);
+  }
+}
+
 async function ensureCategoryExists() {
   const selectedValue = categorySelect.value;
 
-  if (!selectedValue) {
-    throw new Error("Please select a category.");
-  }
-
-  if (selectedValue !== "__new__") {
-    return selectedValue;
-  }
+  if (!selectedValue) throw new Error("Please select a category.");
+  if (selectedValue !== "__new__") return selectedValue;
 
   const newCategoryName = newCategoryNameInput.value.trim();
   const newCategorySlug = slugify(newCategorySlugInput.value.trim());
@@ -151,15 +185,10 @@ async function ensureCategoryExists() {
     throw new Error("New category name and slug are required.");
   }
 
-  const existingQuery = query(
-    collection(db, "categories"),
-    where("slug", "==", newCategorySlug)
-  );
+  const existingQuery = query(collection(db, "categories"), where("slug", "==", newCategorySlug));
   const existingSnapshot = await getDocs(existingQuery);
 
-  if (!existingSnapshot.empty) {
-    return newCategorySlug;
-  }
+  if (!existingSnapshot.empty) return newCategorySlug;
 
   const sorted = sortCategories(categoriesCache);
   const nextSortOrder =
@@ -177,20 +206,82 @@ async function ensureCategoryExists() {
   });
 
   await loadCategoriesIntoSelect(newCategorySlug);
+  await loadCategoriesIntoEditSelect(newCategorySlug);
+  await loadCategoryList();
+  return newCategorySlug;
+}
+
+async function ensureEditCategoryExists() {
+  const selectedValue = editCategorySelect.value;
+
+  if (!selectedValue) throw new Error("Please select a category.");
+  if (selectedValue !== "__new__") return selectedValue;
+
+  const newCategoryName = editNewCategoryNameInput.value.trim();
+  const newCategorySlug = slugify(editNewCategorySlugInput.value.trim());
+
+  if (!newCategoryName || !newCategorySlug) {
+    throw new Error("New category name and slug are required.");
+  }
+
+  const existingQuery = query(collection(db, "categories"), where("slug", "==", newCategorySlug));
+  const existingSnapshot = await getDocs(existingQuery);
+
+  if (!existingSnapshot.empty) return newCategorySlug;
+
+  const sorted = sortCategories(categoriesCache);
+  const nextSortOrder =
+    sorted.length > 0
+      ? Math.max(...sorted.map((category) => Number(category.sortOrder || 0))) + 10
+      : 10;
+
+  await addDoc(collection(db, "categories"), {
+    name: newCategoryName,
+    slug: newCategorySlug,
+    sortOrder: nextSortOrder,
+    active: true,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+
+  await loadCategoriesIntoSelect(newCategorySlug);
+  await loadCategoriesIntoEditSelect(newCategorySlug);
   await loadCategoryList();
   return newCategorySlug;
 }
 
 function resetEquipmentForm() {
-  currentEquipmentEditId = null;
   equipmentForm.reset();
-  document.getElementById("form-title").textContent = "Add equipment";
   document.getElementById("inventory").value = 1;
   document.getElementById("active").checked = true;
   categorySelect.value = "";
   newCategoryNameInput.value = "";
   newCategorySlugInput.value = "";
   toggleNewCategoryFields();
+}
+
+function resetEditModalForm() {
+  currentEquipmentEditId = null;
+  editEquipmentForm.reset();
+  document.getElementById("edit-inventory").value = 1;
+  document.getElementById("edit-active").checked = true;
+  editCategorySelect.value = "";
+  editNewCategoryNameInput.value = "";
+  editNewCategorySlugInput.value = "";
+  toggleEditNewCategoryFields();
+}
+
+function openEditModal() {
+  editModal.classList.add("open");
+  editModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+function closeEditModal() {
+  editModal.classList.remove("open");
+  editModal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+  resetEditModalForm();
 }
 
 async function saveEquipment(event) {
@@ -200,7 +291,6 @@ async function saveEquipment(event) {
     saveStatus.textContent = "Saving equipment…";
 
     const categorySlug = await ensureCategoryExists();
-
     const name = document.getElementById("name").value.trim();
     const imageName = document.getElementById("imageName").value.trim();
     const inventory = Number(document.getElementById("inventory").value || 0);
@@ -210,7 +300,6 @@ async function saveEquipment(event) {
     const keywords = parseLines(document.getElementById("keywords").value);
     const description = parseLines(document.getElementById("description").value);
     const specifications = parseSpecifications(document.getElementById("specifications").value);
-
     const slug = slugify(name);
 
     const payload = {
@@ -228,14 +317,10 @@ async function saveEquipment(event) {
       updatedAt: serverTimestamp()
     };
 
-    if (currentEquipmentEditId) {
-      await updateDoc(doc(db, "equipment", currentEquipmentEditId), payload);
-    } else {
-      await addDoc(collection(db, "equipment"), {
-        ...payload,
-        createdAt: serverTimestamp()
-      });
-    }
+    await addDoc(collection(db, "equipment"), {
+      ...payload,
+      createdAt: serverTimestamp()
+    });
 
     saveStatus.textContent = "Equipment saved.";
     resetEquipmentForm();
@@ -246,32 +331,73 @@ async function saveEquipment(event) {
   }
 }
 
-function fillEquipmentForm(id, item) {
-  currentEquipmentEditId = id;
-  document.getElementById("form-title").textContent = "Edit equipment";
+async function saveEditedEquipment(event) {
+  event.preventDefault();
 
-  document.getElementById("name").value = item.name || "";
-  document.getElementById("imageName").value = item.imageName || "";
-  document.getElementById("inventory").value = item.inventory ?? 0;
-  document.getElementById("rentalPrice").value = item.rentalPrice ?? "";
-  document.getElementById("keywords").value = (item.keywords || []).join("\n");
-  document.getElementById("description").value = (item.description || []).join("\n");
-  document.getElementById("specifications").value = (item.specifications || [])
+  if (!currentEquipmentEditId) return;
+
+  try {
+    saveStatus.textContent = "Saving changes…";
+
+    const categorySlug = await ensureEditCategoryExists();
+    const name = document.getElementById("edit-name").value.trim();
+    const imageName = document.getElementById("edit-imageName").value.trim();
+    const inventory = Number(document.getElementById("edit-inventory").value || 0);
+    const rentalPriceValue = document.getElementById("edit-rentalPrice").value;
+    const rentalPrice = rentalPriceValue === "" ? null : Number(rentalPriceValue);
+    const active = document.getElementById("edit-active").checked;
+    const keywords = parseLines(document.getElementById("edit-keywords").value);
+    const description = parseLines(document.getElementById("edit-description").value);
+    const specifications = parseSpecifications(document.getElementById("edit-specifications").value);
+    const slug = slugify(name);
+
+    const payload = {
+      name,
+      slug,
+      categorySlug,
+      imageName,
+      imageUrl: buildImageUrl(imageName),
+      inventory,
+      rentalPrice,
+      active,
+      keywords,
+      description,
+      specifications,
+      updatedAt: serverTimestamp()
+    };
+
+    await updateDoc(doc(db, "equipment", currentEquipmentEditId), payload);
+
+    saveStatus.textContent = "Equipment updated.";
+    closeEditModal();
+    await loadEquipmentList();
+  } catch (error) {
+    console.error("Edit equipment failed:", error);
+    saveStatus.textContent = error.message || "Equipment update failed.";
+  }
+}
+
+async function fillEditModal(id, item) {
+  currentEquipmentEditId = id;
+
+  await loadCategoriesIntoEditSelect(item.categorySlug || "");
+
+  document.getElementById("edit-name").value = item.name || "";
+  document.getElementById("edit-imageName").value = item.imageName || "";
+  document.getElementById("edit-inventory").value = item.inventory ?? 0;
+  document.getElementById("edit-rentalPrice").value = item.rentalPrice ?? "";
+  document.getElementById("edit-keywords").value = (item.keywords || []).join("\n");
+  document.getElementById("edit-description").value = (item.description || []).join("\n");
+  document.getElementById("edit-specifications").value = (item.specifications || [])
     .map((spec) => `${spec.label}: ${spec.value}`)
     .join("\n");
-  document.getElementById("active").checked = !!item.active;
+  document.getElementById("edit-active").checked = !!item.active;
 
-  if (item.categorySlug) {
-    categorySelect.value = item.categorySlug;
-  } else {
-    categorySelect.value = "";
-  }
+  editNewCategoryNameInput.value = "";
+  editNewCategorySlugInput.value = "";
+  toggleEditNewCategoryFields();
 
-  newCategoryNameInput.value = "";
-  newCategorySlugInput.value = "";
-  toggleNewCategoryFields();
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  openEditModal();
 }
 
 async function removeEquipment(id) {
@@ -288,21 +414,16 @@ async function removeEquipment(id) {
 }
 
 async function clearAllEquipment() {
-  const firstConfirm = window.confirm(
-    "Delete ALL equipment items? This does not delete categories."
-  );
+  const firstConfirm = window.confirm("Delete ALL equipment items? This does not delete categories.");
   if (!firstConfirm) return;
 
-  const secondConfirm = window.confirm(
-    "Are you absolutely sure? This removes every document in the equipment collection."
-  );
+  const secondConfirm = window.confirm("Are you absolutely sure? This removes every document in the equipment collection.");
   if (!secondConfirm) return;
 
   try {
     saveStatus.textContent = "Deleting all equipment…";
 
     const snapshot = await getDocs(collection(db, "equipment"));
-
     for (const docSnap of snapshot.docs) {
       await deleteDoc(doc(db, "equipment", docSnap.id));
     }
@@ -318,17 +439,11 @@ async function clearAllEquipment() {
 }
 
 async function deleteCategory(categoryId, categorySlug, categoryName) {
-  const linkedQuery = query(
-    collection(db, "equipment"),
-    where("categorySlug", "==", categorySlug)
-  );
-
+  const linkedQuery = query(collection(db, "equipment"), where("categorySlug", "==", categorySlug));
   const linkedSnapshot = await getDocs(linkedQuery);
 
   if (!linkedSnapshot.empty) {
-    window.alert(
-      `Cannot delete "${categoryName}" because ${linkedSnapshot.size} equipment item(s) still use this category.`
-    );
+    window.alert(`Cannot delete "${categoryName}" because ${linkedSnapshot.size} equipment item(s) still use this category.`);
     return;
   }
 
@@ -338,6 +453,7 @@ async function deleteCategory(categoryId, categorySlug, categoryName) {
   try {
     await deleteDoc(doc(db, "categories", categoryId));
     await loadCategoriesIntoSelect();
+    await loadCategoriesIntoEditSelect();
     await loadCategoryList();
     saveStatus.textContent = `Category "${categoryName}" deleted.`;
   } catch (error) {
@@ -353,7 +469,9 @@ async function updateCategorySortOrder(categoryId, newSortOrder) {
       updatedAt: serverTimestamp()
     });
     await loadCategoriesIntoSelect();
+    await loadCategoriesIntoEditSelect();
     await loadCategoryList();
+    await loadEquipmentList();
     saveStatus.textContent = "Category order updated.";
   } catch (error) {
     console.error("Update category sort order failed:", error);
@@ -384,7 +502,9 @@ async function moveCategory(categoryId, direction) {
     });
 
     await loadCategoriesIntoSelect();
+    await loadCategoriesIntoEditSelect();
     await loadCategoryList();
+    await loadEquipmentList();
     saveStatus.textContent = "Category order updated.";
   } catch (error) {
     console.error("Move category failed:", error);
@@ -408,10 +528,7 @@ async function loadCategoryList() {
     categoryList.innerHTML = "";
 
     for (const category of categoriesCache) {
-      const linkedQuery = query(
-        collection(db, "equipment"),
-        where("categorySlug", "==", category.slug)
-      );
+      const linkedQuery = query(collection(db, "equipment"), where("categorySlug", "==", category.slug));
       const linkedSnapshot = await getDocs(linkedQuery);
 
       const row = document.createElement("div");
@@ -480,9 +597,7 @@ async function loadEquipmentList() {
       return;
     }
 
-    const categoryOrderMap = new Map(
-      categoriesCache.map((category, index) => [category.slug, index])
-    );
+    const categoryOrderMap = new Map(categoriesCache.map((category, index) => [category.slug, index]));
 
     items.sort((a, b) => {
       const aIndex = categoryOrderMap.has(a.categorySlug) ? categoryOrderMap.get(a.categorySlug) : 999999;
@@ -491,50 +606,86 @@ async function loadEquipmentList() {
       return (a.name || "").localeCompare(b.name || "");
     });
 
+    const grouped = new Map();
+    items.forEach((item) => {
+      const slug = item.categorySlug || "__uncategorized__";
+      if (!grouped.has(slug)) grouped.set(slug, []);
+      grouped.get(slug).push(item);
+    });
+
+    const orderedSlugs = [
+      ...categoriesCache.map((category) => category.slug).filter((slug) => grouped.has(slug)),
+      ...[...grouped.keys()].filter((slug) => !categoriesCache.some((category) => category.slug === slug))
+    ];
+
     equipmentList.innerHTML = "";
 
-    let currentCategorySlug = "";
+    orderedSlugs.forEach((slug) => {
+      const categoryMeta = categoriesCache.find((category) => category.slug === slug);
+      const categoryName = categoryMeta?.name || slug || "Uncategorized";
+      const categoryItems = grouped.get(slug) || [];
 
-    items.forEach((item) => {
-      if (item.categorySlug !== currentCategorySlug) {
-        currentCategorySlug = item.categorySlug;
-        const categoryMeta = categoriesCache.find((category) => category.slug === currentCategorySlug);
-        const groupTitle = document.createElement("h3");
-        groupTitle.className = "category-group-title";
-        groupTitle.textContent = categoryMeta?.name || currentCategorySlug || "Uncategorized";
-        equipmentList.appendChild(groupTitle);
+      if (!(slug in equipmentExpandedState)) {
+        equipmentExpandedState[slug] = false;
       }
 
-      const imageUrl = buildImageUrl(item.imageName);
+      const group = document.createElement("div");
+      group.className = `equipment-group${equipmentExpandedState[slug] ? " open" : ""}`;
 
-      const row = document.createElement("div");
-      row.className = "admin-list-item";
-
-      row.innerHTML = `
-        <img src="${imageUrl}" alt="${item.name || ""}" />
-        <div class="admin-list-meta">
-          <h3>${item.name || "Untitled item"}</h3>
-          <p>Category: ${item.categorySlug || ""}</p>
-          <p>Inventory: ${Number(item.inventory || 0)}</p>
-          <p>${formatPrice(item)} · ${item.active ? "Active" : "Inactive"}</p>
-          <p>Image: ${item.imageName || ""}</p>
+      const header = document.createElement("button");
+      header.type = "button";
+      header.className = "equipment-group-header";
+      header.innerHTML = `
+        <div class="equipment-group-title">
+          <span>${categoryName}</span>
+          <span class="equipment-group-count">${categoryItems.length} item(s)</span>
         </div>
-        <div class="admin-list-actions">
-          <button class="admin-button-secondary edit-equipment-button" type="button">Edit</button>
-          <button class="admin-button-danger delete-equipment-button" type="button">Delete</button>
-        </div>
+        <span class="equipment-group-chevron">▼</span>
       `;
 
-      row.querySelector(".edit-equipment-button").addEventListener("click", async () => {
-        await loadCategoriesIntoSelect(item.categorySlug || "");
-        fillEquipmentForm(item.id, item);
+      const body = document.createElement("div");
+      body.className = "equipment-group-body";
+
+      header.addEventListener("click", () => {
+        equipmentExpandedState[slug] = !equipmentExpandedState[slug];
+        group.classList.toggle("open", equipmentExpandedState[slug]);
       });
 
-      row.querySelector(".delete-equipment-button").addEventListener("click", () => {
-        removeEquipment(item.id);
+      categoryItems.forEach((item) => {
+        const imageUrl = buildImageUrl(item.imageName);
+
+        const row = document.createElement("div");
+        row.className = "admin-list-item";
+
+        row.innerHTML = `
+          <img src="${imageUrl}" alt="${item.name || ""}" />
+          <div class="admin-list-meta">
+            <h3>${item.name || "Untitled item"}</h3>
+            <p>Category: ${item.categorySlug || ""}</p>
+            <p>Inventory: ${Number(item.inventory || 0)}</p>
+            <p>${formatPrice(item)} · ${item.active ? "Active" : "Inactive"}</p>
+            <p>Image: ${item.imageName || ""}</p>
+          </div>
+          <div class="admin-list-actions">
+            <button class="admin-button-secondary edit-equipment-button" type="button">Edit</button>
+            <button class="admin-button-danger delete-equipment-button" type="button">Delete</button>
+          </div>
+        `;
+
+        row.querySelector(".edit-equipment-button").addEventListener("click", async () => {
+          await fillEditModal(item.id, item);
+        });
+
+        row.querySelector(".delete-equipment-button").addEventListener("click", () => {
+          removeEquipment(item.id);
+        });
+
+        body.appendChild(row);
       });
 
-      equipmentList.appendChild(row);
+      group.appendChild(header);
+      group.appendChild(body);
+      equipmentList.appendChild(group);
     });
   } catch (error) {
     console.error("Load equipment failed:", error);
@@ -551,6 +702,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   await loadCategoriesIntoSelect();
+  await loadCategoriesIntoEditSelect();
   await loadCategoryList();
   await loadEquipmentList();
 });
@@ -559,12 +711,36 @@ if (categorySelect) {
   categorySelect.addEventListener("change", toggleNewCategoryFields);
 }
 
+if (editCategorySelect) {
+  editCategorySelect.addEventListener("change", toggleEditNewCategoryFields);
+}
+
 if (equipmentForm) {
   equipmentForm.addEventListener("submit", saveEquipment);
 }
 
+if (editEquipmentForm) {
+  editEquipmentForm.addEventListener("submit", saveEditedEquipment);
+}
+
 if (clearAllEquipmentButton) {
   clearAllEquipmentButton.addEventListener("click", clearAllEquipment);
+}
+
+if (closeEditModalButton) {
+  closeEditModalButton.addEventListener("click", closeEditModal);
+}
+
+if (cancelEditModalButton) {
+  cancelEditModalButton.addEventListener("click", closeEditModal);
+}
+
+if (editModal) {
+  editModal.addEventListener("click", (event) => {
+    if (event.target === editModal) {
+      closeEditModal();
+    }
+  });
 }
 
 const cancelEquipmentEditButton = document.getElementById("cancel-edit-button");

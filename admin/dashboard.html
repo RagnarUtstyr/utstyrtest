@@ -285,10 +285,118 @@
       display: none !important;
     }
 
-    .category-group-title {
-      margin: 20px 0 10px;
+    .equipment-group {
+      border: 1px solid #262626;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #131313;
+    }
+
+    .equipment-group-header {
+      width: 100%;
+      background: #181818;
+      color: #fff;
+      border: none;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      text-align: left;
+      font-family: 'Poppins', sans-serif;
+      font-size: 15px;
+    }
+
+    .equipment-group-header:hover {
+      background: #202020;
+    }
+
+    .equipment-group-title {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .equipment-group-count {
+      color: #aaa;
+      font-size: 12px;
+    }
+
+    .equipment-group-chevron {
+      font-size: 14px;
+      color: #aaa;
+    }
+
+    .equipment-group-body {
+      display: none;
+      padding: 10px;
+      gap: 10px;
+      background: #131313;
+    }
+
+    .equipment-group.open .equipment-group-body {
+      display: grid;
+    }
+
+    .equipment-group.open .equipment-group-chevron {
+      transform: rotate(180deg);
+    }
+
+    .admin-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      box-sizing: border-box;
+      z-index: 9999;
+    }
+
+    .admin-modal.open {
+      display: flex;
+    }
+
+    .admin-modal-dialog {
+      width: min(900px, 100%);
+      max-height: 90vh;
+      overflow: auto;
+      background: #171717;
+      border: 1px solid #2c2c2c;
+      border-radius: 10px;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .admin-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .admin-modal-header h2 {
+      margin: 0;
+      color: #fff;
+      font-size: 20px;
+    }
+
+    .admin-modal-close {
+      border: 1px solid #444;
+      background: #222;
+      color: #fff;
+      width: 38px;
+      height: 38px;
+      border-radius: 6px;
+      cursor: pointer;
       font-size: 18px;
-      color: #ffcc00;
+    }
+
+    .admin-modal-close:hover {
+      background: #2d2d2d;
     }
 
     @media (max-width: 1100px) {
@@ -310,6 +418,10 @@
       .admin-list-actions,
       .admin-category-controls {
         justify-content: flex-start;
+      }
+
+      .admin-modal {
+        padding: 12px;
       }
     }
   </style>
@@ -340,7 +452,7 @@
     <div class="admin-layout">
       <div class="admin-column">
         <section class="admin-panel">
-          <h2 id="form-title">Add equipment</h2>
+          <h2>Add equipment</h2>
 
           <form id="equipment-form">
             <div class="admin-form-grid">
@@ -424,6 +536,82 @@
       </div>
     </div>
   </main>
+
+  <div class="admin-modal" id="edit-equipment-modal" aria-hidden="true">
+    <div class="admin-modal-dialog">
+      <div class="admin-modal-header">
+        <h2>Edit equipment</h2>
+        <button class="admin-modal-close" id="close-edit-modal-button" type="button">×</button>
+      </div>
+
+      <form id="edit-equipment-form">
+        <div class="admin-form-grid">
+          <div class="admin-field">
+            <label for="edit-name">Name</label>
+            <input type="text" id="edit-name" required />
+          </div>
+
+          <div class="admin-field">
+            <label for="edit-categorySelect">Category</label>
+            <select id="edit-categorySelect" required>
+              <option value="">Select category</option>
+              <option value="__new__">Create new category</option>
+            </select>
+          </div>
+
+          <div class="admin-field hidden" id="edit-newCategoryNameField">
+            <label for="edit-newCategoryName">New category name</label>
+            <input type="text" id="edit-newCategoryName" />
+          </div>
+
+          <div class="admin-field hidden" id="edit-newCategorySlugField">
+            <label for="edit-newCategorySlug">New category slug</label>
+            <input type="text" id="edit-newCategorySlug" placeholder="camera" />
+          </div>
+
+          <div class="admin-field">
+            <label for="edit-imageName">Image name</label>
+            <input type="text" id="edit-imageName" required />
+          </div>
+
+          <div class="admin-field">
+            <label for="edit-inventory">Inventory</label>
+            <input type="number" id="edit-inventory" min="0" value="1" />
+          </div>
+
+          <div class="admin-field">
+            <label for="edit-rentalPrice">Rental price (NOK)</label>
+            <input type="number" id="edit-rentalPrice" min="0" step="1" />
+          </div>
+
+          <div class="admin-field full">
+            <label for="edit-keywords">Keywords (one per line)</label>
+            <textarea id="edit-keywords" rows="5"></textarea>
+          </div>
+
+          <div class="admin-field full">
+            <label for="edit-description">Description paragraphs (one per line)</label>
+            <textarea id="edit-description" rows="6"></textarea>
+          </div>
+
+          <div class="admin-field full">
+            <label for="edit-specifications">Specifications (one per line, format: Label: Value)</label>
+            <textarea id="edit-specifications" rows="6"></textarea>
+          </div>
+
+          <label class="admin-checkbox">
+            <input type="checkbox" id="edit-active" checked />
+            Active
+          </label>
+        </div>
+
+        <div class="admin-actions">
+          <button type="submit" class="admin-button">Save changes</button>
+          <button type="button" id="cancel-edit-modal-button" class="admin-button-secondary">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script type="module" src="../js/dynamic-navbar.js"></script>
   <script type="module" src="../js/admin-auth.js"></script>
