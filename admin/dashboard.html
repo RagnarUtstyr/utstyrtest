@@ -225,6 +225,29 @@
       justify-content: flex-end;
     }
 
+    .admin-category-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      background: #131313;
+      border: 1px solid #262626;
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .admin-category-item h3 {
+      margin: 0 0 4px 0;
+      font-size: 15px;
+      color: #fff;
+    }
+
+    .admin-category-item p {
+      margin: 0;
+      font-size: 12px;
+      color: #a8a8a8;
+    }
+
     .admin-muted {
       color: #999;
       font-size: 13px;
@@ -253,7 +276,8 @@
         grid-template-columns: 1fr;
       }
 
-      .admin-list-item {
+      .admin-list-item,
+      .admin-category-item {
         grid-template-columns: 1fr;
       }
 
@@ -357,6 +381,11 @@
               <button type="button" id="cancel-edit-button" class="admin-button-secondary">Cancel</button>
             </div>
           </form>
+        </section>
+
+        <section class="admin-panel">
+          <h2>Categories</h2>
+          <div class="admin-list" id="admin-category-list"></div>
         </section>
       </div>
 

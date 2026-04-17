@@ -20,6 +20,7 @@ const IMAGE_BASE_PATH = "/utstyrtest/images/";
 const saveStatus = document.getElementById("save-status");
 const equipmentForm = document.getElementById("equipment-form");
 const equipmentList = document.getElementById("admin-equipment-list");
+const categoryList = document.getElementById("admin-category-list");
 const categorySelect = document.getElementById("categorySelect");
 const newCategoryNameField = document.getElementById("newCategoryNameField");
 const newCategorySlugField = document.getElementById("newCategorySlugField");
@@ -165,6 +166,7 @@ async function ensureCategoryExists() {
   });
 
   await loadCategoriesIntoSelect(newCategorySlug);
+  await loadCategoryList();
   return newCategorySlug;
 }
 
@@ -295,10 +297,89 @@ async function clearAllEquipment() {
 
     resetEquipmentForm();
     await loadEquipmentList();
+    await loadCategoryList();
     saveStatus.textContent = "All equipment deleted.";
   } catch (error) {
     console.error("Clear all equipment failed:", error);
     saveStatus.textContent = "Clear all equipment failed.";
+  }
+}
+
+async function deleteCategory(categoryId, categorySlug, categoryName) {
+  const linkedQuery = query(
+    collection(db, "equipment"),
+    where("categorySlug", "==", categorySlug)
+  );
+
+  const linkedSnapshot = await getDocs(linkedQuery);
+
+  if (!linkedSnapshot.empty) {
+    window.alert(
+      `Cannot delete "${categoryName}" because ${linkedSnapshot.size} equipment item(s) still use this category.`
+    );
+    return;
+  }
+
+  const ok = window.confirm(`Delete category "${categoryName}"?`);
+  if (!ok) return;
+
+  try {
+    await deleteDoc(doc(db, "categories", categoryId));
+    await loadCategoriesIntoSelect();
+    await loadCategoryList();
+    saveStatus.textContent = `Category "${categoryName}" deleted.`;
+  } catch (error) {
+    console.error("Delete category failed:", error);
+    saveStatus.textContent = "Delete category failed.";
+  }
+}
+
+async function loadCategoryList() {
+  if (!categoryList) return;
+
+  categoryList.innerHTML = "<p class='admin-muted'>Loading categories…</p>";
+
+  try {
+    const snapshot = await getDocs(query(collection(db, "categories"), orderBy("sortOrder")));
+
+    if (snapshot.empty) {
+      categoryList.innerHTML = "<p class='admin-muted'>No categories yet.</p>";
+      return;
+    }
+
+    categoryList.innerHTML = "";
+
+    for (const docSnap of snapshot.docs) {
+      const category = docSnap.data();
+
+      const linkedQuery = query(
+        collection(db, "equipment"),
+        where("categorySlug", "==", category.slug)
+      );
+      const linkedSnapshot = await getDocs(linkedQuery);
+
+      const row = document.createElement("div");
+      row.className = "admin-category-item";
+
+      row.innerHTML = `
+        <div>
+          <h3>${category.name || "Untitled category"}</h3>
+          <p>Slug: ${category.slug || ""} · Items: ${linkedSnapshot.size}</p>
+        </div>
+        <div class="admin-list-actions">
+          <button class="admin-button-danger delete-category-button" type="button">Delete</button>
+        </div>
+      `;
+
+      row.querySelector(".delete-category-button").addEventListener("click", () => {
+        deleteCategory(docSnap.id, category.slug, category.name || category.slug || "category");
+      });
+
+      categoryList.appendChild(row);
+    }
+  } catch (error) {
+    console.error("Load category list failed:", error);
+    categoryList.innerHTML = "<p class='admin-muted'>Could not load categories.</p>";
   }
 }
 
@@ -357,9 +438,6 @@ async function loadEquipmentList() {
   }
 }
 
-/* ---------------------------
-   INIT
----------------------------- */
 onAuthStateChanged(auth, async (user) => {
   if (!window.location.pathname.includes("/admin/dashboard.html")) return;
 
@@ -369,6 +447,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   await loadCategoriesIntoSelect();
+  await loadCategoryList();
   await loadEquipmentList();
 });
 
