@@ -171,7 +171,7 @@ async function loadEquipment() {
         data: docSnap.data()
       }))
       .filter(({ data }) => data.active !== false)
-      .sort((a, b) => {
+            .sort((a, b) => {
         const aIndex = categoryOrderMap.has(a.data.categorySlug)
           ? categoryOrderMap.get(a.data.categorySlug)
           : 999999;
@@ -180,6 +180,11 @@ async function loadEquipment() {
           : 999999;
 
         if (aIndex !== bIndex) return aIndex - bIndex;
+
+        const aSort = Number(a.data.sortOrder ?? 999999);
+        const bSort = Number(b.data.sortOrder ?? 999999);
+        if (aSort !== bSort) return aSort - bSort;
+
         return (a.data.name || "").localeCompare(b.data.name || "");
       });
 

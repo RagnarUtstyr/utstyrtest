@@ -16,9 +16,7 @@
       padding: 0;
     }
 
-    body::before {
-      display: none;
-    }
+    body::before { display: none; }
 
     header {
       max-width: 100%;
@@ -126,13 +124,6 @@
       min-height: 90px;
     }
 
-    .admin-field input:focus,
-    .admin-field textarea:focus,
-    .admin-field select:focus {
-      outline: none;
-      border-color: #666;
-    }
-
     .admin-checkbox {
       display: flex;
       align-items: center;
@@ -199,10 +190,6 @@
       object-fit: cover;
       border-radius: 4px;
       background: #000;
-    }
-
-    .admin-list-meta {
-      min-width: 0;
     }
 
     .admin-list-meta h3 {
@@ -274,13 +261,6 @@
       margin: 0;
     }
 
-    #auth-status,
-    #save-status {
-      margin: 0;
-      font-size: 13px;
-      color: #aaa;
-    }
-
     .hidden {
       display: none !important;
     }
@@ -339,10 +319,6 @@
       display: grid;
     }
 
-    .equipment-group.open .equipment-group-chevron {
-      transform: rotate(180deg);
-    }
-
     .admin-modal {
       position: fixed;
       inset: 0;
@@ -395,10 +371,6 @@
       font-size: 18px;
     }
 
-    .admin-modal-close:hover {
-      background: #2d2d2d;
-    }
-
     @media (max-width: 1100px) {
       .admin-layout {
         grid-template-columns: 1fr;
@@ -419,10 +391,6 @@
       .admin-category-controls {
         justify-content: flex-start;
       }
-
-      .admin-modal {
-        padding: 12px;
-      }
     }
   </style>
 </head>
@@ -432,6 +400,11 @@
       <a href="../index.html">
         <img src="../images/logo.png" alt="Logo" />
       </a>
+    </div>
+
+    <div id="search-bar-container">
+      <input type="text" id="global-search-field" placeholder="Search" autocomplete="off">
+      <div id="dropdown-results" class="dropdown-results"></div>
     </div>
 
     <nav id="main-navbar"></nav>
@@ -444,7 +417,6 @@
       <div class="admin-status">
         <button id="clear-all-equipment-button" class="admin-button-danger">Clear all equipment</button>
         <button id="admin-logout-button" class="admin-button-secondary">Log out</button>
-        <p id="auth-status"></p>
         <p id="save-status"></p>
       </div>
     </div>
@@ -481,7 +453,7 @@
 
               <div class="admin-field">
                 <label for="imageName">Image name</label>
-                <input type="text" id="imageName" placeholder="6x6-grid.jpg" required />
+                <input type="text" id="imageName" required />
               </div>
 
               <div class="admin-field">
@@ -531,6 +503,9 @@
       <div class="admin-column">
         <section class="admin-panel">
           <h2>Existing equipment</h2>
+          <div class="admin-search-wrap">
+            <input type="text" id="admin-equipment-search" class="admin-search-input" placeholder="Search equipment by name, category, or keyword">
+          </div>
           <div class="admin-list" id="admin-equipment-list"></div>
         </section>
       </div>
@@ -613,6 +588,8 @@
     </div>
   </div>
 
+  <script src="../basket.js"></script>
+  <script type="module" src="../js/search.js"></script>
   <script type="module" src="../js/dynamic-navbar.js"></script>
   <script type="module" src="../js/admin-auth.js"></script>
   <script type="module" src="../js/admin-dashboard.js"></script>

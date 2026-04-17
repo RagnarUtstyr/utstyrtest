@@ -186,7 +186,12 @@ async function loadCategoryItems() {
         data: docSnap.data()
       }))
       .filter(({ data }) => data.active !== false)
-      .sort((a, b) => (a.data.name || "").localeCompare(b.data.name || ""));
+        .sort((a, b) => {
+        const aSort = Number(a.data.sortOrder ?? 999999);
+        const bSort = Number(b.data.sortOrder ?? 999999);
+        if (aSort !== bSort) return aSort - bSort;
+        return (a.data.name || "").localeCompare(b.data.name || "");
+      });
 
     renderEquipment(allEquipment);
 
