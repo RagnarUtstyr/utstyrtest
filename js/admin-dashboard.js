@@ -14,7 +14,7 @@ import {
   where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-const IMAGE_BASE_PATH = "/images/";
+const IMAGE_BASE_PATH = "/utstyrtest/images/";
 
 const saveStatus = document.getElementById("save-status");
 const equipmentForm = document.getElementById("equipment-form");
@@ -61,7 +61,7 @@ function parseSpecifications(text) {
 
 function buildImageUrl(imageName) {
   const cleanName = (imageName || "").trim().replace(/^\/+/, "");
-  return cleanName ? `${IMAGE_BASE_PATH}${cleanName}` : "/images/placeholder.png";
+  return cleanName ? `${IMAGE_BASE_PATH}${cleanName}` : "/utstyrtestV/images/placeholder.png";
 }
 
 function formatPrice(item) {

@@ -98,7 +98,7 @@ function normalizeItem(item) {
     slug: slugify(name),
     categorySlug,
     imageName,
-    imageUrl: `/images/${imageName}`,
+    imageUrl: `/utstyrtest/images/${imageName}`,
     inventory: Number(item.inventory ?? 0),
     rentalPrice:
       item.rentalPrice === undefined || item.rentalPrice === null

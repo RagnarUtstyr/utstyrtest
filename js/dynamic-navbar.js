@@ -5,7 +5,7 @@ import {
   query
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-const SITE_BASE_PATH = "/";
+const SITE_BASE_PATH = "/utstyrtest/";
 
 function withBase(path) {
   const cleanBase = SITE_BASE_PATH.endsWith("/") ? SITE_BASE_PATH : `${SITE_BASE_PATH}/`;
