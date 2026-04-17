@@ -60,9 +60,9 @@ async function loadNavbar() {
         </ul>
       </li>
       <li class="dropdown">
-        <a href="${withBase("Contact.html")}" class="dropbtn">Contact</a>
+        <a href="${withBase("contact.html")}" class="dropbtn">Contact</a>
         <ul class="dropdown-content">
-          <li><a href="${withBase("Contact.html")}">Contact</a></li>
+          <li><a href="${withBase("contact.html")}">Contact</a></li>
         </ul>
       </li>
     </ul>
