@@ -10,22 +10,27 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <header>
-    <div class="logo">
-      <a href="index.html">
-        <img src="images/logo.png" alt="Ragnar Bøe Utstyrsleie Logo" />
-      </a>
-    </div>
+<header>
+  <div class="logo">
+    <a href="index.html">
+      <img src="images/logo.png" alt="Logo">
+    </a>
+  </div>
 
-    <div class="basket-icon-container">
-      <a href="basket.html">
-        <img src="images/basket-icon.png" alt="Basket" class="basket-icon" />
-        <span id="basket-icon-count">0</span>
-      </a>
-    </div>
+  <div id="search-bar-container">
+    <input type="text" id="global-search-field" placeholder="Search" autocomplete="off">
+    <div id="dropdown-results" class="dropdown-results"></div>
+  </div>
 
-    <nav id="main-navbar"></nav>
-  </header>
+  <div class="basket-icon-container">
+    <a href="basket.html">
+      <img src="images/basket-icon.png" alt="Basket" class="basket-icon">
+      <span id="basket-icon-count">0</span>
+    </a>
+  </div>
+
+  <nav id="main-navbar"></nav>
+</header>
 
   <div id="equipment-page"></div>
 
