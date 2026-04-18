@@ -31,7 +31,9 @@ async function loadNavbar() {
   try {
     const snapshot = await getDocs(query(collection(db, "categories")));
     const categories = sortCategories(
-      snapshot.docs.map((docSnap) => docSnap.data()).filter((category) => category.active !== false)
+      snapshot.docs
+        .map((docSnap) => docSnap.data())
+        .filter((category) => category.active !== false)
     );
 
     categories.forEach((category) => {
@@ -52,6 +54,7 @@ async function loadNavbar() {
   const navHTML = `
     <ul class="navbar">
       <li><a href="${withBase("index.html")}">Home</a></li>
+
       <li class="dropdown">
         <a href="${withBase("alleq.html")}" class="dropbtn">Equipment</a>
         <ul class="dropdown-content">
@@ -59,12 +62,15 @@ async function loadNavbar() {
           <li><a href="${withBase("alleq.html")}">All Equipment</a></li>
         </ul>
       </li>
-<li class="dropdown">
-  <a href="${withBase("contact.html")}" class="dropbtn">Contact</a>
-  <ul class="dropdown-content">
-    <li><a href="${withBase("contact.html")}">Contact</a></li>
-  </ul>
-</li>
+
+      <li><a href="${withBase("about.html")}">About</a></li>
+
+      <li class="dropdown">
+        <a href="${withBase("contact.html")}" class="dropbtn">Contact</a>
+        <ul class="dropdown-content">
+          <li><a href="${withBase("contact.html")}">Contact</a></li>
+        </ul>
+      </li>
     </ul>
   `;
 
