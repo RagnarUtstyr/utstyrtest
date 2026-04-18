@@ -1,47 +1,80 @@
-document.addEventListener("DOMContentLoaded", function () {
-    // Check how deep we are in the folder structure
-    const currentPath = window.location.pathname;
-    const depth = currentPath.split("/").length - 2; // -2 because the first item is empty and last is file.html
+import { db } from "./firebase-config.js";
+import {
+  collection,
+  getDocs,
+  query
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    // Create prefix like '', '../', '../../' etc.
-    const prefix = depth === 0 ? '' : '../'.repeat(depth);
+const SITE_BASE_PATH = "/utstyrtest/";
 
-    const navHTML = `
-        <ul class='navbar'>
-            <li><a href='${prefix}index.html'>Home</a></li>
-            <li class='dropdown'>
-                <a href='${prefix}equipment.html' class='dropbtn'>Equipment</a>
-                <ul class='dropdown-content'>
-                    <li><a href='${prefix}camera.html'>Camera</a></li>
-                    <li><a href='${prefix}camacc.html'>Camera Accessories</a></li>
-                    <li><a href='${prefix}optikk.html'>Optikk</a></li>
-                    <li><a href='${prefix}monitor.html'>Monitor</a></li>
-                    <li><a href='${prefix}fokus.html'>Fokus</a></li>
-                    <li><a href='${prefix}wireless.html'>Wireless</a></li>
-                    <li><a href='${prefix}batteri.html'>Battery</a></li>
-                    <li><a href='${prefix}lys.html'>Light</a></li>
-                    <li><a href='${prefix}grip.html'>Grip</a></li>
-                    <li><a href='${prefix}lyd.html'>Sound</a></li>
-                    <li><a href='${prefix}filter.html'>Filter</a></li>
-                    <li><a href='${prefix}tralle.html'>Carts</a></li>
-                    <li><a href='${prefix}power.html'>Power and EL</a></li>
-                    <li><a href='${prefix}data-stream.html'>Data/Stream</a></li>
-                    <li><a href='${prefix}cables.html'>Cables</a></li>
-                    <li><a href='${prefix}alleq.html'>All Search</a></li>
-                </ul>
-            </li>
-            <li class='dropdown'>
-                <a href='${prefix}Contact.html' class='dropbtn'>Contact</a>
-                <ul class='dropdown-content'>
-                    <li><a href='${prefix}About.html'>About</a></li>
-                    <li><a href='${prefix}Contact.html'>Contact</a></li>
-                </ul>
-            </li>
+function withBase(path) {
+  const cleanBase = SITE_BASE_PATH.endsWith("/") ? SITE_BASE_PATH : `${SITE_BASE_PATH}/`;
+  const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+  return `${cleanBase}${cleanPath}`;
+}
+
+function sortCategories(categories) {
+  return [...categories].sort((a, b) => {
+    const aOrder = Number(a.sortOrder ?? 999999);
+    const bOrder = Number(b.sortOrder ?? 999999);
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return (a.name || "").localeCompare(b.name || "");
+  });
+}
+
+async function loadNavbar() {
+  const navContainer = document.getElementById("main-navbar");
+  if (!navContainer) return;
+
+  let categoryLinks = "";
+
+  try {
+    const snapshot = await getDocs(query(collection(db, "categories")));
+    const categories = sortCategories(
+      snapshot.docs
+        .map((docSnap) => docSnap.data())
+        .filter((category) => category.active !== false)
+    );
+
+    categories.forEach((category) => {
+      if (!category.slug || !category.name) return;
+
+      categoryLinks += `
+        <li>
+          <a href="${withBase(`category.html?slug=${encodeURIComponent(category.slug)}`)}">
+            ${category.name}
+          </a>
+        </li>
+      `;
+    });
+  } catch (error) {
+    console.error("Navbar category load failed:", error);
+  }
+
+  const navHTML = `
+    <ul class="navbar">
+      <li><a href="${withBase("index.html")}">Home</a></li>
+
+      <li class="dropdown">
+        <a href="${withBase("alleq.html")}" class="dropbtn">Equipment</a>
+        <ul class="dropdown-content">
+          ${categoryLinks}
+          <li><a href="${withBase("alleq.html")}">All Equipment</a></li>
         </ul>
-    `;
+      </li>
 
-    const navContainer = document.getElementById("main-navbar");
-    if (navContainer) {
-        navContainer.innerHTML = navHTML;
-    }
-});
+      <li><a href="${withBase("about.html")}">About</a></li>
+
+      <li class="dropdown">
+        <a href="${withBase("contact.html")}" class="dropbtn">Contact</a>
+        <ul class="dropdown-content">
+          <li><a href="${withBase("contact.html")}">Contact</a></li>
+        </ul>
+      </li>
+    </ul>
+  `;
+
+  navContainer.innerHTML = navHTML;
+}
+
+document.addEventListener("DOMContentLoaded", loadNavbar);
