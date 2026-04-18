@@ -28,11 +28,30 @@ function formatPrice(value) {
     return `${Number(value)} NOK`;
 }
 
-function formatLineTotal(quantity, unitPrice) {
-    if (unitPrice === null || unitPrice === undefined || unitPrice === '' || Number.isNaN(Number(unitPrice))) {
-        return 'Price on request';
+function calculateRentalDays(fromDate, toDate) {
+    if (!fromDate || !toDate) return 1;
+
+    const start = new Date(fromDate);
+    const end = new Date(toDate);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        return 1;
     }
-    return `${Number(quantity) * Number(unitPrice)} NOK`;
+
+    const startUtc = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+    const endUtc = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+
+    const diffMs = endUtc - startUtc;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+
+    return diffDays >= 1 ? diffDays : 1;
+}
+
+function calculateLineTotal(quantity, unitPrice, rentalDays) {
+    if (unitPrice === null || unitPrice === undefined || unitPrice === '' || Number.isNaN(Number(unitPrice))) {
+        return null;
+    }
+    return Number(quantity) * Number(unitPrice) * Number(rentalDays);
 }
 
 document.getElementById('contact-form').addEventListener('submit', function(event) {
@@ -44,23 +63,36 @@ document.getElementById('contact-form').addEventListener('submit', function(even
     let to_date = document.getElementById('to_date').value;
     let message = document.getElementById('message').value;
 
+    const rentalDays = calculateRentalDays(from_date, to_date);
     let basket = getBasket();
     let basketContent = '';
+    let grandTotal = 0;
+    let hasNumericTotal = false;
 
-for (let item in basket) {
-    if (basket.hasOwnProperty(item)) {
-        const entry = normalizeBasketEntry(basket[item]);
-        basketContent += `${item}
+    for (let item in basket) {
+        if (basket.hasOwnProperty(item)) {
+            const entry = normalizeBasketEntry(basket[item]);
+            const lineTotal = calculateLineTotal(entry.quantity, entry.unitPrice, rentalDays);
+
+            if (lineTotal !== null) {
+                grandTotal += lineTotal;
+                hasNumericTotal = true;
+            }
+
+            basketContent += `${item}
 Quantity: ${entry.quantity}
 Unit price: ${formatPrice(entry.unitPrice)}
-Full price: ${formatLineTotal(entry.quantity, entry.unitPrice)}
+Rental days: ${rentalDays}
+Full price: ${lineTotal === null ? 'Price on request' : `${lineTotal} NOK`}
 
 `;
+        }
     }
-}
 
     if (basketContent === '') {
         basketContent = 'Basket is empty.';
+    } else {
+        basketContent += `Grand total: ${hasNumericTotal ? `${grandTotal} NOK` : 'Price on request'}`;
     }
 
     let templateParams = {

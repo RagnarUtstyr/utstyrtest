@@ -23,13 +23,6 @@ function normalizeBasketEntry(entry) {
     };
 }
 
-function formatPrice(value) {
-    if (value === null || value === undefined || value === '' || Number.isNaN(Number(value))) {
-        return 'Price on request';
-    }
-    return `${Number(value)} NOK`;
-}
-
 function escapeForSingleQuotedJsString(value) {
     return String(value)
         .replace(/\\/g, '\\\\')
@@ -197,10 +190,9 @@ function downloadBasket() {
         if (basket.hasOwnProperty(item)) {
             const entry = normalizeBasketEntry(basket[item]);
             basketContent += `
-                <li style="display: grid; grid-template-columns: 1.6fr 0.7fr 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid #ffcc00; align-items: center;">
+                <li style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #ffcc00; align-items: center;">
                     <span style="text-align: left;">${item}</span>
-                    <span style="text-align: center;">${entry.quantity} unit(s)</span>
-                    <span style="text-align: right;">${formatPrice(entry.unitPrice)}</span>
+                    <span style="text-align: right;">${entry.quantity} unit(s)</span>
                 </li>`;
         }
     }
