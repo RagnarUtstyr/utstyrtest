@@ -261,6 +261,13 @@
       margin: 0;
     }
 
+    .admin-help {
+      color: #999;
+      font-size: 12px;
+      margin: 0 0 10px 0;
+      text-align: left;
+    }
+
     .hidden {
       display: none !important;
     }
@@ -369,6 +376,41 @@
       border-radius: 6px;
       cursor: pointer;
       font-size: 18px;
+    }
+
+    .admin-search-wrap {
+      margin-bottom: 14px;
+    }
+
+    .admin-search-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background: #101010;
+      color: #fff;
+      font-size: 14px;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .admin-search-input:focus {
+      outline: none;
+      border-color: #666;
+    }
+
+    .admin-list-item[draggable="true"],
+    .admin-category-item[draggable="true"] {
+      cursor: grab;
+    }
+
+    .admin-list-item.dragging,
+    .admin-category-item.dragging {
+      opacity: 0.45;
+    }
+
+    .admin-drop-target {
+      outline: 1px dashed #ffcc00;
     }
 
     @media (max-width: 1100px) {
@@ -496,6 +538,7 @@
 
         <section class="admin-panel">
           <h2>Categories</h2>
+          <p class="admin-help">Drag categories to reorder them. The number field still works as a manual backup.</p>
           <div class="admin-list" id="admin-category-list"></div>
         </section>
       </div>

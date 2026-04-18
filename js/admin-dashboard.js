@@ -423,31 +423,20 @@ async function updateCategorySortOrder(categoryId, newSortOrder) {
   await loadEquipmentList();
 }
 
-async function moveCategory(categoryId, direction) {
-  const sorted = sortCategories(categoriesCache);
-  const index = sorted.findIndex((category) => category.id === categoryId);
-  if (index === -1) return;
-
-  const swapIndex = direction === "up" ? index - 1 : index + 1;
-  if (swapIndex < 0 || swapIndex >= sorted.length) return;
-
-  const current = sorted[index];
-  const other = sorted[swapIndex];
-
-  await updateDoc(doc(db, "categories", current.id), {
-    sortOrder: Number(other.sortOrder ?? 0),
-    updatedAt: serverTimestamp()
-  });
-
-  await updateDoc(doc(db, "categories", other.id), {
-    sortOrder: Number(current.sortOrder ?? 0),
-    updatedAt: serverTimestamp()
-  });
+async function persistCategoryOrder(orderedIds) {
+  for (let i = 0; i < orderedIds.length; i += 1) {
+    const categoryId = orderedIds[i];
+    await updateDoc(doc(db, "categories", categoryId), {
+      sortOrder: (i + 1) * 10,
+      updatedAt: serverTimestamp()
+    });
+  }
 
   await loadCategoriesIntoSelect();
   await loadCategoriesIntoEditSelect();
   await loadCategoryList();
   await loadEquipmentList();
+  saveStatus.textContent = "Category order updated.";
 }
 
 async function loadCategoryList() {
@@ -461,12 +450,17 @@ async function loadCategoryList() {
 
   categoryList.innerHTML = "";
 
+  let dragged = null;
+
   for (const category of categoriesCache) {
     const linkedQuery = query(collection(db, "equipment"), where("categorySlug", "==", category.slug));
     const linkedSnapshot = await getDocs(linkedQuery);
 
     const row = document.createElement("div");
     row.className = "admin-category-item";
+    row.dataset.categoryId = category.id;
+    row.setAttribute("draggable", "true");
+
     row.innerHTML = `
       <div>
         <h3>${category.name || "Untitled category"}</h3>
@@ -474,8 +468,6 @@ async function loadCategoryList() {
       </div>
       <div class="admin-category-controls">
         <input class="admin-sort-input" type="number" value="${Number(category.sortOrder ?? 0)}">
-        <button class="admin-button-secondary move-up-button" type="button">↑</button>
-        <button class="admin-button-secondary move-down-button" type="button">↓</button>
         <button class="admin-button-secondary save-sort-button" type="button">Save</button>
         <button class="admin-button-danger delete-category-button" type="button">Delete</button>
       </div>
@@ -486,10 +478,46 @@ async function loadCategoryList() {
       updateCategorySortOrder(category.id, newValue);
     });
 
-    row.querySelector(".move-up-button").addEventListener("click", () => moveCategory(category.id, "up"));
-    row.querySelector(".move-down-button").addEventListener("click", () => moveCategory(category.id, "down"));
     row.querySelector(".delete-category-button").addEventListener("click", () => {
       deleteCategory(category.id, category.slug, category.name || category.slug || "category");
+    });
+
+    row.addEventListener("dragstart", () => {
+      dragged = row;
+      row.classList.add("dragging");
+    });
+
+    row.addEventListener("dragend", async () => {
+      row.classList.remove("dragging");
+      categoryList.querySelectorAll(".admin-category-item").forEach((el) => el.classList.remove("admin-drop-target"));
+      const orderedIds = Array.from(categoryList.querySelectorAll(".admin-category-item")).map((el) => el.dataset.categoryId);
+      await persistCategoryOrder(orderedIds);
+    });
+
+    row.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      if (!dragged || dragged === row) return;
+      row.classList.add("admin-drop-target");
+    });
+
+    row.addEventListener("dragleave", () => {
+      row.classList.remove("admin-drop-target");
+    });
+
+    row.addEventListener("drop", (event) => {
+      event.preventDefault();
+      row.classList.remove("admin-drop-target");
+      if (!dragged || dragged === row) return;
+
+      const rows = Array.from(categoryList.querySelectorAll(".admin-category-item"));
+      const draggedIndex = rows.indexOf(dragged);
+      const targetIndex = rows.indexOf(row);
+
+      if (draggedIndex < targetIndex) {
+        row.after(dragged);
+      } else {
+        row.before(dragged);
+      }
     });
 
     categoryList.appendChild(row);
@@ -526,7 +554,6 @@ async function persistCategoryItemOrder(categorySlug, orderedIds) {
 
 function attachDragHandlers(body, categorySlug) {
   let dragged = null;
-
   const rows = Array.from(body.querySelectorAll(".admin-list-item"));
 
   rows.forEach((row) => {
@@ -538,7 +565,6 @@ function attachDragHandlers(body, categorySlug) {
     row.addEventListener("dragend", async () => {
       row.classList.remove("dragging");
       body.querySelectorAll(".admin-list-item").forEach((el) => el.classList.remove("admin-drop-target"));
-
       const orderedIds = Array.from(body.querySelectorAll(".admin-list-item")).map((el) => el.dataset.itemId);
       await persistCategoryItemOrder(categorySlug, orderedIds);
       await loadEquipmentList();
