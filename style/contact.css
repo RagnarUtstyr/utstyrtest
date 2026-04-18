@@ -3,7 +3,7 @@ body {
     font-family: 'Poppins', sans-serif;
     background-color: #1e1e1e;
     color: #9a9b9c;
-    background-image: url('images/bckgrnd.webp');
+    background-image: url('../images/bckgrnd.webp');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -152,7 +152,7 @@ textarea {
 input[type="text"],
 input[type="email"],
 input[type="date"] {
-    background-image: url('images/input-icon.png');
+    background-image: url('../images/input-icon.png');
     background-repeat: no-repeat;
     background-position: 20px center;
     padding-left: 50px;
